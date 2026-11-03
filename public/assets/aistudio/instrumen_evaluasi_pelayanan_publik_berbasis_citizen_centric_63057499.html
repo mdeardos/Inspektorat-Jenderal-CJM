@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instrumen Evaluasi Pelayanan Publik Berbasis Citizen-Centric</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .canvas-scroll::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .canvas-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .canvas-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .canvas-scroll::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .stage-col {
+      transition: all 0.15s ease;
+    }
+    .stage-col.active-stage {
+      border-color: #1e3a8a;
+      box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.22);
+      background-color: #f8fafc;
+    }
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #step-1, #step-2 {
+        display: none !important;
+      }
+      #step-3 {
+        display: block !important;
+      }
+      #codesign-editor-panel {
+        display: none !important;
+      }
+      #printable-report {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Official Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 font-bold text-sm">
+          EP
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-semibold tracking-tight text-white">Instrumen Evaluasi Pelayanan Publik Citizen-Centric</h1>
+          <p class="text-xs text-slate-400">Kertas Kerja Pemetaan Perjalanan Pengguna (Customer Journey Mapping)</p>
+        </div>
+      </div>
+
+      <!-- Auto-Save Status, Preset, Reset & Export Controls -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span id="autosave-indicator" class="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-400 bg-slate-800/90 border border-slate-700 px-2.5 py-1 rounded-lg">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <span id="autosave-text">Tersimpan Otomatis</span>
+        </span>
+
+        <label for="preset-select" class="text-xs text-slate-300 hidden sm:inline ml-1">Contoh Data:</label>
+        <select id="preset-select" onchange="loadPreset(this.value)" class="bg-slate-800 text-slate-100 text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-amber-400">
+          <option value="perizinan">Layanan Perizinan Usaha</option>
+          <option value="pengaduan">Layanan Pengaduan Masyarakat</option>
+          <option value="bantuan">Layanan Bantuan Usaha Mikro</option>
+          <option value="kosong">Kanvas Kosong (Baru)</option>
+        </select>
+
+        <button type="button" id="btn-reset-data" onclick="handleResetClick()" class="inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition" title="Kembalikan ke data awal contoh">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+          <span id="reset-btn-label">Reset</span>
+        </button>
+
+        <button type="button" onclick="exportReportPDF()" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs px-3 py-1.5 rounded-lg transition">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Cetak / PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Simple 3-Step Navigation Bar -->
+    <div class="bg-slate-800/80 border-t border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <nav class="flex items-center gap-1 sm:gap-2 py-2 overflow-x-auto" aria-label="Tahapan Evaluasi">
+          <button type="button" id="tab-btn-1" onclick="goToStep(1)" class="step-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 transition">
+            <span class="w-5 h-5 rounded-full bg-slate-950/20 flex items-center justify-center text-[11px] font-bold">1</span>
+            <span>1. Profil Layanan & Pengguna</span>
+          </button>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 shrink-0"></i>
+          <button type="button" id="tab-btn-2" onclick="goToStep(2)" class="step-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/60 transition">
+            <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[11px] font-bold">2</span>
+            <span>2. Kanvas Customer Journey Map</span>
+          </button>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-500 shrink-0"></i>
+          <button type="button" id="tab-btn-3" onclick="goToStep(3)" class="step-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/60 transition">
+            <span class="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[11px] font-bold">3</span>
+            <span>3. Rencana Co-Design & Laporan</span>
+          </button>
+        </nav>
+        <div class="hidden md:flex items-center gap-3 text-xs text-slate-300">
+          <span>Model: <strong id="header-model-badge" class="text-amber-400">Guardian of Public Goods</strong></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- ==========================================
+         LANGKAH 1: PROFIL LAYANAN & PENGGUNA
+         ========================================== -->
+    <section id="step-1" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Identitas Layanan & Persona Pengguna -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Identitas Evaluasi -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i data-lucide="building-2" class="w-4 h-4 text-blue-800"></i>
+              <span>Identitas Objek Evaluasi</span>
+            </h2>
+            <div class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Unit Kerja Penyelenggara</label>
+                <input id="inp-unit" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Contoh: Direktorat Perizinan">
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Nama Layanan Publik</label>
+                <input id="inp-service" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Contoh: Penerbitan Persetujuan Impor">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Tim Evaluator</label>
+                  <input id="inp-auditor" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Tim Evaluasi">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Periode Evaluasi</label>
+                  <input id="inp-period" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="TW II - 2025">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Profil Persona Pengguna -->
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <i data-lucide="user-check" class="w-4 h-4 text-blue-800"></i>
+              <span>Persona Pengguna Layanan (Citizen)</span>
+            </h2>
+            <div class="space-y-3.5">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Nama / Inisial Persona</label>
+                  <input id="inp-persona-name" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Rina Wijaya">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-slate-700 mb-1">Profil / Pekerjaan</label>
+                  <input id="inp-persona-role" type="text" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Pelaku Usaha IKM">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Kondisi Literasi & Akses Kanal</label>
+                <select id="inp-persona-literacy" onchange="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-800">
+                  <option value="Sedang (Terbiasa aplikasi pesan singkat, belum familier portal teknis)">Sedang (Terbiasa aplikasi pesan singkat, belum familier portal teknis)</option>
+                  <option value="Tinggi (Terbiasa menggunakan sistem perizinan daring)">Tinggi (Terbiasa menggunakan sistem perizinan daring)</option>
+                  <option value="Terbatas (Mengandalkan pendampingan petugas tatap muka)">Terbatas (Mengandalkan pendampingan petugas tatap muka)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Tujuan & Harapan Utama Pengguna</label>
+                <textarea id="inp-persona-goal" rows="2" oninput="syncStep1Inputs()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Memperoleh kepastian syarat dan waktu penyelesaian layanan tanpa revisi berulang."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Pemilihan Service Model -->
+        <div class="lg:col-span-7">
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 h-full flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                  <i data-lucide="layers" class="w-4 h-4 text-blue-800"></i>
+                  <span>Pilih Karakteristik Model Layanan (Service Model)</span>
+                </h2>
+                <span class="text-xs text-slate-500">Pilih 1 model yang paling sesuai</span>
+              </div>
+              <p class="text-xs text-slate-600 mb-4">
+                Model layanan menentukan fokus evaluasi pengalaman pengguna yang akan diperiksa pada tahap pemetaan perjalanan layanan.
+              </p>
+
+              <!-- 5 Service Model Cards -->
+              <div id="service-models-grid" class="space-y-2.5">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div class="text-xs text-slate-500">
+                Fokus Evaluasi: <strong id="selected-model-focus" class="text-slate-800">-</strong>
+              </div>
+              <button type="button" onclick="saveStep1AndContinue()" class="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition">
+                <span>Simpan & Lanjut ke Kanvas CJM</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================================
+         LANGKAH 2: KANVAS CUSTOMER JOURNEY MAP
+         ========================================== -->
+    <section id="step-2" class="hidden space-y-5">
+      
+      <!-- Top Bar Info -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs font-semibold" id="cjm-banner-service">
+            Penerbitan Persetujuan Impor
+          </div>
+          <span class="text-xs text-slate-600">Persona: <strong id="cjm-banner-persona" class="text-slate-900">Rina Wijaya</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="goToStep(3)" class="inline-flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition">
+            <span>Lanjut ke Rencana & Laporan</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           FORM EDIT TAHAPAN CJM (DENGAN TOMBOL SIMPAN / OK)
+           ==================================================== -->
+      <div id="stage-editor-card" class="bg-white rounded-xl border-2 border-blue-900/25 shadow-sm p-5">
+        <div class="flex flex-col gap-3 pb-4 mb-4 border-b border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <i data-lucide="edit-3" class="w-4 h-4 text-blue-900"></i>
+                <span>Form Pengisian & Edit Tahapan CJM</span>
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Pilih tahapan di bawah ini, ubah nama atau rincian evaluasinya, lalu klik tombol <strong>Simpan / OK</strong> (setiap ketikan juga tersimpan otomatis).</p>
+            </div>
+            <div id="save-toast" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-semibold">
+              <span>✓ Perubahan tahapan berhasil disimpan ke Kanvas CJM</span>
+            </div>
+          </div>
+
+          <!-- 6 Stage Selector Pills -->
+          <div id="stage-selector-tabs" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Stage Name & Subtitle Editor Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+          <div>
+            <label for="ed-code" class="block text-xs font-semibold text-slate-700 mb-1">Urutan Tahap</label>
+            <input id="ed-code" type="text" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Tahap 1">
+          </div>
+          <div>
+            <label for="ed-name" class="block text-xs font-semibold text-slate-700 mb-1">Nama Tahapan (Bisa Diedit)</label>
+            <input id="ed-name" type="text" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-blue-950 focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Contoh: Awareness / Pencarian Informasi">
+          </div>
+          <div>
+            <label for="ed-subtitle" class="block text-xs font-semibold text-slate-700 mb-1">Keterangan Singkat Tahapan</label>
+            <input id="ed-subtitle" type="text" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Contoh: Pencarian Informasi Awal">
+          </div>
+        </div>
+
+        <!-- Stage Content Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Col 1: Actions & Touchpoints -->
+          <div class="space-y-3">
+            <div>
+              <label for="ed-action" class="block text-xs font-semibold text-slate-700 mb-1">1. Aktivitas Pengguna (Customer Action)</label>
+              <textarea id="ed-action" rows="3" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Apa yang dilakukan pengguna pada tahap ini?"></textarea>
+            </div>
+            <div>
+              <label for="ed-touchpoint" class="block text-xs font-semibold text-slate-700 mb-1">2. Saluran Layanan (Touchpoints)</label>
+              <input id="ed-touchpoint" type="text" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Contoh: Portal Web, Loket Terpadu, WhatsApp">
+            </div>
+            <div>
+              <label for="ed-response" class="block text-xs font-semibold text-slate-700 mb-1">3. Respons Petugas / Sistem</label>
+              <textarea id="ed-response" rows="3" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Bagaimana sistem atau petugas merespons pengguna?"></textarea>
+            </div>
+          </div>
+
+          <!-- Col 2: Hambatan (Administrative Burden) -->
+          <div class="space-y-3 bg-rose-50/50 p-3.5 rounded-lg border border-rose-200/80">
+            <div>
+              <label for="ed-burden" class="block text-xs font-semibold text-rose-900 mb-1">4. Hambatan / Keluhan Pengguna (Burden)</label>
+              <textarea id="ed-burden" rows="4" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-rose-600" placeholder="Tuliskan kendala yang dialami pengguna pada tahap ini..."></textarea>
+            </div>
+            <div>
+              <span class="block text-xs font-semibold text-rose-900 mb-1.5">Kategori Beban yang Dialami:</span>
+              <div class="space-y-2 text-xs text-slate-800">
+                <label class="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" id="chk-learning" onchange="autoSaveStageDraft()" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                  <span><strong>Beban Informasi (Learning):</strong> Syarat/prosedur sulit dipahami</span>
+                </label>
+                <label class="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" id="chk-compliance" onchange="autoSaveStageDraft()" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                  <span><strong>Beban Kepatuhan (Compliance):</strong> Berkas berulang / waktu lama</span>
+                </label>
+                <label class="flex items-start gap-2 cursor-pointer">
+                  <input type="checkbox" id="chk-psychological" onchange="autoSaveStageDraft()" class="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                  <span><strong>Beban Psikologis (Psychological):</strong> Ketidakpastian / stres</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Col 3: Emotion & Opportunities -->
+          <div class="space-y-3 bg-emerald-50/50 p-3.5 rounded-lg border border-emerald-200/80 flex flex-col justify-between">
+            <div class="space-y-3">
+              <div>
+                <label for="ed-emotion" class="block text-xs font-semibold text-slate-800 mb-1">5. Skor Pengalaman Pengguna di Tahap Ini</label>
+                <select id="ed-emotion" onchange="autoSaveStageDraft()" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-800">
+                  <option value="2">+2 : Sangat Mudah & Memuaskan</option>
+                  <option value="1">+1 : Cukup Mudah & Jelas</option>
+                  <option value="0">0 : Netral / Biasa Saja</option>
+                  <option value="-1">-1 : Membingungkan / Menghambat</option>
+                  <option value="-2">-2 : Sangat Sulit / Menimbulkan Cemas</option>
+                </select>
+              </div>
+              <div>
+                <label for="ed-opportunity" class="block text-xs font-semibold text-emerald-900 mb-1">6. Peluang Perbaikan (Opportunities)</label>
+                <textarea id="ed-opportunity" rows="4" oninput="autoSaveStageDraft()" class="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="Usulan perbaikan konkret untuk mengatasi hambatan di tahap ini..."></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Explicit Submit / OK Action Bar -->
+        <div class="mt-4 pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="prevStage()" class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition">
+              ← Tahap Sebelumnya
+            </button>
+            <button type="button" onclick="nextStage()" class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition">
+              Tahap Berikutnya →
+            </button>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="btn-submit-stage" onclick="submitStageEdit(false)" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span>Simpan / OK</span>
+            </button>
+            <button type="button" id="btn-submit-next" onclick="submitStageEdit(true)" class="inline-flex items-center gap-1.5 bg-blue-900 hover:bg-blue-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow-sm transition">
+              <span>Simpan & Lanjut Tahap Berikutnya</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================
+           PAPAN VISUAL KANVAS CJM (KALIMAT UTUH & MUDAH DIBACA)
+           ==================================================== -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider">Papan Kanvas Customer Journey Map (CJM)</h3>
+            <p class="text-xs text-slate-500">Seluruh kalimat ditampilkan secara utuh. Klik kartu atau tombol <strong>Edit Tahap Ini</strong> untuk mengubah isinya di form atas.</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
+            <button type="button" id="layout-btn-grid" onclick="setBoardLayout('grid')" class="px-2.5 py-1 rounded text-xs font-semibold bg-white text-slate-900 shadow-sm transition">
+              Tampilan 3 Kolom (Lebar & Jelas)
+            </button>
+            <button type="button" id="layout-btn-scroll" onclick="setBoardLayout('scroll')" class="px-2.5 py-1 rounded text-xs font-medium text-slate-600 hover:text-slate-900 transition">
+              Tampilan 6 Kolom Memanjang
+            </button>
+          </div>
+        </div>
+
+        <div id="cjm-board-wrapper" class="canvas-scroll overflow-x-auto pb-2">
+          <div id="cjm-board-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- 6 Stage Columns Rendered by JS (Full Text, Zero Truncation) -->
+          </div>
+        </div>
+
+        <!-- Compact Journey Experience Curve -->
+        <div class="mt-6 pt-4 border-t border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <span class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Kurva Pengalaman & Emosi Pengguna di Setiap Tahap</span>
+            <span class="text-xs text-slate-500">Skala: -2 (Sangat Sulit/Cemas) s.d. +2 (Sangat Mudah/Puas)</span>
+          </div>
+          <div class="h-40 w-full">
+            <canvas id="emotionChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==========================================
+         LANGKAH 3: RENCANA CO-DESIGN & LAPORAN PDF
+         ========================================== -->
+    <section id="step-3" class="hidden space-y-6">
+      
+      <!-- Action Plan Editor (Hidden when printing) -->
+      <div id="codesign-editor-panel" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 no-print">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4 text-blue-800"></i>
+              <span>Penyusunan Rekomendasi Perbaikan (Co-Design)</span>
+            </h2>
+            <p class="text-xs text-slate-500">Rumuskan tindak lanjut perbaikan layanan berdasarkan temuan pada Customer Journey Map.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="pullOpportunitiesFromCJM()" class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 transition">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-600"></i>
+              <span>Tarik Usulan Otomatis dari CJM</span>
+            </button>
+            <button type="button" onclick="submitCoDesign()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition">
+              <span>Simpan / OK</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">1. Temuan Utama Pengalaman Pengguna</label>
+            <textarea id="cd-discovery" rows="4" oninput="syncCoDesign()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Ringkasan titik krusial yang paling membebani pengguna..."></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">2. Rencana Aksi Pangkas Beban (Burden Reduction)</label>
+            <textarea id="cd-ideation" rows="4" oninput="syncCoDesign()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Langkah penyederhanaan syarat, integrasi sistem, atau kejelasan informasi..."></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">3. Target Output / Prototipe Perbaikan & PIC</label>
+            <textarea id="cd-prototype" rows="4" oninput="syncCoDesign()" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-800" placeholder="Bentuk perubahan nyata yang diuji coba beserta unit penanggung jawab..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Official Printable Report Preview -->
+      <div id="printable-report" class="bg-white rounded-xl border border-slate-300 shadow-sm p-6 sm:p-8 max-w-5xl mx-auto space-y-6">
+        
+        <!-- Formal Document Header -->
+        <div class="border-b-2 border-slate-900 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-slate-500">Dokumen Kertas Kerja Evaluasi</p>
+            <h2 class="text-lg font-bold text-slate-900 uppercase">Laporan Evaluasi Pelayanan Publik Berbasis Citizen-Centric</h2>
+          </div>
+          <div class="text-xs text-slate-600 sm:text-right">
+            <div>Periode: <strong id="rep-period" class="text-slate-900">-</strong></div>
+            <div>Tim Evaluator: <strong id="rep-auditor" class="text-slate-900">-</strong></div>
+          </div>
+        </div>
+
+        <!-- Section 1: Ringkasan Objek & Profil Pengguna -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200 text-xs">
+          <div class="space-y-1.5">
+            <div><span class="text-slate-500">Unit Penyelenggara:</span> <strong id="rep-unit" class="text-slate-900">-</strong></div>
+            <div><span class="text-slate-500">Nama Layanan:</span> <strong id="rep-service" class="text-slate-900">-</strong></div>
+            <div><span class="text-slate-500">Model Layanan:</span> <strong id="rep-model" class="text-blue-900">-</strong></div>
+          </div>
+          <div class="space-y-1.5">
+            <div><span class="text-slate-500">Persona Pengguna:</span> <strong id="rep-persona" class="text-slate-900">-</strong></div>
+            <div><span class="text-slate-500">Karakteristik Akses:</span> <span id="rep-literacy" class="text-slate-800">-</span></div>
+            <div><span class="text-slate-500">Harapan Utama:</span> <span id="rep-goal" class="text-slate-800">-</span></div>
+          </div>
+        </div>
+
+        <!-- Section 2: Ringkasan Indikator Beban Pengguna -->
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="p-3 rounded-lg border border-slate-200 bg-white">
+            <div class="text-[11px] font-medium text-slate-500 uppercase">Tahap dengan Beban Informasi</div>
+            <div id="rep-count-learning" class="text-xl font-bold text-slate-900 mt-0.5">0 / 6</div>
+          </div>
+          <div class="p-3 rounded-lg border border-slate-200 bg-white">
+            <div class="text-[11px] font-medium text-slate-500 uppercase">Tahap dengan Beban Kepatuhan</div>
+            <div id="rep-count-compliance" class="text-xl font-bold text-slate-900 mt-0.5">0 / 6</div>
+          </div>
+          <div class="p-3 rounded-lg border border-slate-200 bg-white">
+            <div class="text-[11px] font-medium text-slate-500 uppercase">Tahap dengan Beban Psikologis</div>
+            <div id="rep-count-psychological" class="text-xl font-bold text-slate-900 mt-0.5">0 / 6</div>
+          </div>
+        </div>
+
+        <!-- Section 3: Matriks Customer Journey Map -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Matriks Pemetaan Perjalanan Pengguna (Customer Journey Map)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse border border-slate-300 text-xs">
+              <thead>
+                <tr class="bg-slate-100 text-slate-800 text-left">
+                  <th class="border border-slate-300 px-2.5 py-2 w-32">Tahapan</th>
+                  <th class="border border-slate-300 px-2.5 py-2">Aktivitas & Saluran</th>
+                  <th class="border border-slate-300 px-2.5 py-2">Respons Layanan</th>
+                  <th class="border border-slate-300 px-2.5 py-2">Hambatan & Kategori Beban</th>
+                  <th class="border border-slate-300 px-2.5 py-2">Usulan Perbaikan</th>
+                </tr>
+              </thead>
+              <tbody id="rep-cjm-tbody">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 4: Rencana Tindak Lanjut Perbaikan -->
+        <div>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-900 mb-2">Rencana Tindak Lanjut Perbaikan Layanan (Co-Design)</h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div class="p-3 rounded-lg border border-slate-300 bg-slate-50/60">
+              <div class="font-bold text-slate-800 mb-1">1. Temuan Utama Pengalaman Pengguna</div>
+              <p id="rep-cd-discovery" class="text-slate-700 whitespace-pre-line leading-relaxed">-</p>
+            </div>
+            <div class="p-3 rounded-lg border border-slate-300 bg-slate-50/60">
+              <div class="font-bold text-slate-800 mb-1">2. Rencana Aksi Pangkas Beban</div>
+              <p id="rep-cd-ideation" class="text-slate-700 whitespace-pre-line leading-relaxed">-</p>
+            </div>
+            <div class="p-3 rounded-lg border border-slate-300 bg-slate-50/60">
+              <div class="font-bold text-slate-800 mb-1">3. Target Output & Penanggung Jawab</div>
+              <p id="rep-cd-prototype" class="text-slate-700 whitespace-pre-line leading-relaxed">-</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const STORAGE_KEY = 'ep_citizen_centric_cjm_autosave_v1';
+
+    // 5 Official Service Models
+    const SERVICE_MODELS = [
+      {
+        id: 'guardian',
+        name: 'Guardian of Public Goods (Perizinan & Pengawasan)',
+        desc: 'Layanan penerbitan izin, sertifikasi, atau verifikasi kepatuhan terhadap standar keselamatan dan regulasi.',
+        focus: 'Kejelasan syarat, kepastian waktu verifikasi, dan transparansi alasan penolakan/revisi.'
+      },
+      {
+        id: 'performance',
+        name: 'Performance Designer (Layanan Administratif Cepat)',
+        desc: 'Layanan rutin terstandar yang mengutamakan kecepatan, kemudahan akses digital, dan efisiensi waktu.',
+        focus: 'Kemudahan antarmuka sistem, kecepatan proses, dan minimnya dokumen berulang.'
+      },
+      {
+        id: 'activator',
+        name: 'Activator (Kemitraan & Pengaduan Masyarakat)',
+        desc: 'Layanan yang melibatkan partisipasi aktif masyarakat, konsultasi publik, atau penanganan pengaduan.',
+        focus: 'Kemudahan kanal pelaporan, kejelasan tindak lanjut, dan komunikasi dua arah yang responsif.'
+      },
+      {
+        id: 'funder',
+        name: 'Funder (Penyaluran Bantuan & Fasilitasi)',
+        desc: 'Layanan pemberian bantuan pemerintah, subsidi, atau fasilitasi pendanaan bagi kelompok sasaran.',
+        focus: 'Kemudahan pendaftaran bagi sasaran, kejelasan kriteria seleksi, dan ketepatan penyaluran.'
+      },
+      {
+        id: 'yield',
+        name: 'Yield Shaper (Pengembangan Kapasitas & Pembinaan)',
+        desc: 'Layanan pendampingan, pelatihan, atau pembinaan jangka panjang untuk meningkatkan daya saing masyarakat/usaha.',
+        focus: 'Kesesuaian materi pembinaan dengan kebutuhan pengguna dan keberlanjutan pendampingan.'
+      }
+    ];
+
+    // Presets Data
+    const PRESETS = {
+      perizinan: {
+        unit: 'Direktorat Pelayanan Perizinan Terpadu',
+        service: 'Layanan Penerbitan Persetujuan Perizinan Berusaha',
+        auditor: 'Tim Evaluasi Pelayanan Publik',
+        period: 'Semester I - 2025',
+        modelId: 'guardian',
+        personaName: 'Rina Wijaya',
+        personaRole: 'Pelaku Usaha Kecil & Menengah',
+        personaLiteracy: 'Sedang (Terbiasa aplikasi pesan singkat, belum familier portal teknis)',
+        personaGoal: 'Memperoleh kepastian dokumen persyaratan sejak awal dan menyelesaikan perizinan tanpa pengembalian berkas berulang.',
+        stages: [
+          {
+            code: 'Tahap 1',
+            name: 'Awareness',
+            subtitle: 'Pencarian Informasi',
+            action: 'Mencari daftar persyaratan dan alur pengajuan izin melalui portal informasi dan media sosial.',
+            touchpoint: 'Portal Web Informasi, Panduan PDF',
+            response: 'Menyediakan dokumen regulasi dan panduan umum di situs web.',
+            burden: 'Istilah teknis regulasi sulit dipahami pelaku usaha baru dan daftar syarat tersebar di beberapa dokumen.',
+            learning: true, compliance: false, psychological: false,
+            emotion: -1,
+            opportunity: 'Menyusun daftar periksa (checklist) persyaratan sederhana dalam 1 halaman dengan bahasa yang mudah dipahami.'
+          },
+          {
+            code: 'Tahap 2',
+            name: 'Access',
+            subtitle: 'Akses & Registrasi Akun',
+            action: 'Membuat akun pengguna dan melakukan aktivasi akses pada portal perizinan daring.',
+            touchpoint: 'Portal Perizinan Daring, Email Aktivasi',
+            response: 'Mengirimkan tautan aktivasi dan memvalidasi identitas dasar pemohon.',
+            burden: 'Tautan aktivasi cukup cepat diterima dan petunjuk pembuatan akun sudah jelas.',
+            learning: false, compliance: false, psychological: false,
+            emotion: 1,
+            opportunity: 'Mempertahankan kemudahan login dan menambahkan panduan singkat di halaman awal.'
+          },
+          {
+            code: 'Tahap 3',
+            name: 'Application',
+            subtitle: 'Pengisian & Unggah Berkas',
+            action: 'Mengisi formulir permohonan dan mengunggah dokumen persyaratan teknis.',
+            touchpoint: 'Formulir Elektronik Portal Layanan',
+            response: 'Sistem menerima unggahan dokumen sesuai format dan ukuran file.',
+            burden: 'Diminta mengunggah ulang dokumen identitas usaha yang sebenarnya sudah pernah diinput saat registrasi.',
+            learning: false, compliance: true, psychological: false,
+            emotion: -1,
+            opportunity: 'Menerapkan pengisian otomatis (auto-fill) data profil usaha agar pemohon tidak perlu mengunggah ulang berkas dasar.'
+          },
+          {
+            code: 'Tahap 4',
+            name: 'Processing',
+            subtitle: 'Verifikasi & Pemrosesan',
+            action: 'Menunggu hasil verifikasi teknis dan memperbaiki berkas jika ada catatan pengembalian.',
+            touchpoint: 'Dashboard Status Permohonan, Notifikasi Email',
+            response: 'Tim verifikator memeriksa kelengkapan dan kesesuaian dokumen teknis.',
+            burden: 'Status permohonan hanya tertulis "Sedang Diproses" selama berhari-hari tanpa estimasi waktu dan alasan revisi kurang spesifik.',
+            learning: false, compliance: true, psychological: true,
+            emotion: -2,
+            opportunity: 'Menampilkan tahapan verifikasi secara transparan beserta batas waktu (SLA) dan catatan perbaikan yang rinci.'
+          },
+          {
+            code: 'Tahap 5',
+            name: 'Resolution',
+            subtitle: 'Penerbitan Hasil Layanan',
+            action: 'Menerima pemberitahuan persetujuan dan mengunduh dokumen izin resmi.',
+            touchpoint: 'Portal Layanan (Menu Unduh Dokumen)',
+            response: 'Sistem menerbitkan dokumen elektronik dengan tanda tangan digital.',
+            burden: 'Dokumen izin langsung dapat diunduh dengan mudah dan dilengkapi kode verifikasi QR.',
+            learning: false, compliance: false, psychological: false,
+            emotion: 2,
+            opportunity: 'Menyediakan notifikasi otomatis melalui pesan singkat saat dokumen resmi telah terbit.'
+          },
+          {
+            code: 'Tahap 6',
+            name: 'Post-Service',
+            subtitle: 'Pasca-Layanan & Pelaporan',
+            action: 'Menyampaikan laporan realisasi berkala dan mengisi survei kepuasan layanan.',
+            touchpoint: 'Modul Pelaporan Berkala, Layanan Bantuan',
+            response: 'Menerima laporan realisasi dan merekam umpan balik pengguna.',
+            burden: 'Format pelaporan pasca-layanan belum disertai contoh pengisian sehingga pengguna khawatir salah lapor.',
+            learning: true, compliance: true, psychological: false,
+            emotion: 0,
+            opportunity: 'Menyediakan templat pelaporan siap pakai dan pengingat jadwal pelaporan otomatis.'
+          }
+        ],
+        coDesign: {
+          discovery: 'Hambatan terbesar berada pada tahap Pengisian Berkas (unggah dokumen berulang) dan tahap Verifikasi (ketidakpastian waktu tunggu serta catatan revisi yang kurang rinci).',
+          ideation: '1. Menyediakan daftar periksa (checklist) syarat berbahasa sederhana di halaman depan.\n2. Mengaktifkan fitur auto-fill profil usaha untuk memangkas unggah ulang dokumen.\n3. Menambahkan indikator progres verifikasi dan standar catatan revisi yang jelas.',
+          prototype: 'Prototipe pelacak status permohonan (progress tracker) 4 tahap dan templat checklist persyaratan 1 halaman — Penanggung Jawab: Tim Pengelola Portal & Unit Teknis.'
+        }
+      },
+      pengaduan: {
+        unit: 'Unit Layanan Pengaduan & Perlindungan Masyarakat',
+        service: 'Layanan Pengaduan dan Mediasi Masalah Layanan',
+        auditor: 'Tim Evaluasi Pelayanan Publik',
+        period: 'Semester I - 2025',
+        modelId: 'activator',
+        personaName: 'Budi Santoso',
+        personaRole: 'Pengguna Layanan / Masyarakat Umum',
+        personaLiteracy: 'Sedang (Terbiasa aplikasi pesan singkat, belum familier portal teknis)',
+        personaGoal: 'Mendapatkan kejelasan tindak lanjut dan solusi atas pengaduan yang disampaikan secara cepat.',
+        stages: [
+          {
+            code: 'Tahap 1', name: 'Awareness', subtitle: 'Pencarian Informasi',
+            action: 'Mencari tahu kanal pengaduan resmi dan syarat bukti pendukung.',
+            touchpoint: 'Situs Web, Media Sosial Resmi',
+            response: 'Menampilkan nomor kontak dan tautan formulir pengaduan.',
+            burden: 'Terdapat beberapa nomor kontak berbeda sehingga masyarakat bingung memilih kanal yang masih aktif.',
+            learning: true, compliance: false, psychological: false, emotion: -1,
+            opportunity: 'Menyatukan informasi kanal pengaduan resmi dalam satu pintu yang mudah dikenali.'
+          },
+          {
+            code: 'Tahap 2', name: 'Access', subtitle: 'Akses & Registrasi Akun',
+            action: 'Mengakses kanal pengaduan melalui aplikasi pesan atau formulir web.',
+            touchpoint: 'WhatsApp Layanan, Portal Pengaduan',
+            response: 'Bot otomatis memberikan menu awal layanan pengaduan.',
+            burden: 'Akses awal melalui WhatsApp mudah dijangkau oleh masyarakat.',
+            learning: false, compliance: false, psychological: false, emotion: 1,
+            opportunity: 'Memastikan respons awal selalu menyertakan nomor tiket pengaduan.'
+          },
+          {
+            code: 'Tahap 3', name: 'Application', subtitle: 'Pengisian & Unggah Berkas',
+            action: 'Menuliskan kronologi kejadian dan melampirkan bukti pendukung.',
+            touchpoint: 'Formulir Pengaduan Daring',
+            response: 'Mencatat laporan dan menerbitkan nomor tiket laporan.',
+            burden: 'Formulir meminta terlalu banyak kolom administratif sebelum pelapor bisa menceritakan inti masalah.',
+            learning: false, compliance: true, psychological: false, emotion: -1,
+            opportunity: 'Menyederhanakan formulir pengaduan menjadi maksimal 5 kolom inti.'
+          },
+          {
+            code: 'Tahap 4', name: 'Processing', subtitle: 'Verifikasi & Pemrosesan',
+            action: 'Menunggu klarifikasi dan tindak lanjut dari petugas penanganan.',
+            touchpoint: 'Notifikasi Tiket, Telepon/Pesan Petugas',
+            response: 'Petugas memverifikasi laporan dan berkoordinasi dengan unit terkait.',
+            burden: 'Pelapor tidak mendapat kabar perkembangan selama lebih dari 7 hari kerja sehingga merasa laporannya diabaikan.',
+            learning: false, compliance: false, psychological: true, emotion: -2,
+            opportunity: 'Menerapkan pemberitahuan status berkala maksimal setiap 3 hari kerja kepada pelapor.'
+          },
+          {
+            code: 'Tahap 5', name: 'Resolution', subtitle: 'Penerbitan Hasil Layanan',
+            action: 'Menerima penjelasan hasil penyelesaian atau kesepakatan tindak lanjut.',
+            touchpoint: 'Surat Jawaban / Pesan Resmi Penyelesaian',
+            response: 'Menyampaikan hasil tindak lanjut kepada pelapor.',
+            burden: 'Penjelasan penyelesaian cukup jelas dan menjawab permasalahan utama.',
+            learning: false, compliance: false, psychological: false, emotion: 1,
+            opportunity: 'Menyertakan ringkasan solusi yang mudah dibaca pada pesan penutup.'
+          },
+          {
+            code: 'Tahap 6', name: 'Post-Service', subtitle: 'Pasca-Layanan & Pelaporan',
+            action: 'Memberikan penilaian kepuasan atas penanganan pengaduan.',
+            touchpoint: 'Tautan Survei Singkat',
+            response: 'Merekam evaluasi kepuasan pelapor.',
+            burden: 'Tautan survei singkat mudah diisi melalui ponsel.',
+            learning: false, compliance: false, psychological: false, emotion: 1,
+            opportunity: 'Menggunakan umpan balik pelapor untuk evaluasi rutin bulanan.'
+          }
+        ],
+        coDesign: {
+          discovery: 'Titik krusial berada pada kebingungan memilih kanal pengaduan di awal dan ketiadaan kabar perkembangan selama proses telaah berlangsung.',
+          ideation: '1. Integrasi nomor dan tautan pengaduan menjadi satu pintu resmi.\n2. Penyederhanaan kolom formulir laporan.\n3. Notifikasi otomatis perkembangan tindak lanjut setiap 3 hari kerja.',
+          prototype: 'Alur pesan otomatis nomor tiket & pembaruan status berkala via WhatsApp — Penanggung Jawab: Tim Layanan Pengaduan.'
+        }
+      },
+      bantuan: {
+        unit: 'Direktorat Bina Usaha dan Fasilitasi',
+        service: 'Layanan Pendaftaran Fasilitasi Sarana Usaha Mikro',
+        auditor: 'Tim Evaluasi Pelayanan Publik',
+        period: 'Semester I - 2025',
+        modelId: 'funder',
+        personaName: 'Siti Aminah',
+        personaRole: 'Pemilik Usaha Mikro Kuliner',
+        personaLiteracy: 'Terbatas (Mengandalkan pendampingan petugas tatap muka)',
+        personaGoal: 'Memahami syarat penerima bantuan dengan jelas dan dapat mendaftar tanpa kendala teknis.',
+        stages: [
+          {
+            code: 'Tahap 1', name: 'Awareness', subtitle: 'Pencarian Informasi',
+            action: 'Mendengar informasi program bantuan dari dinas/komunitas dan mencari syarat pendaftaran.',
+            touchpoint: 'Pengumuman Dinas, Grup Komunitas UMKM',
+            response: 'Menyebarkan brosur pengumuman pendaftaran program.',
+            burden: 'Informasi batas waktu dan kriteria penerima pada brosur kurang rinci.',
+            learning: true, compliance: false, psychological: false, emotion: -1,
+            opportunity: 'Membuat poster informasi visual dengan rincian syarat dan jadwal yang jelas.'
+          },
+          {
+            code: 'Tahap 2', name: 'Access', subtitle: 'Akses & Registrasi Akun',
+            action: 'Membuka halaman pendaftaran daring melalui ponsel.',
+            touchpoint: 'Situs Pendaftaran Program',
+            response: 'Menampilkan halaman login dan registrasi peserta.',
+            burden: 'Tampilan halaman kurang ramah layar ponsel dan sering gagal memuat saat jam sibuk.',
+            learning: false, compliance: true, psychological: true, emotion: -2,
+            opportunity: 'Mengoptimalkan halaman pendaftaran agar ringan diakses dari ponsel dan menyediakan loket pendampingan.'
+          },
+          {
+            code: 'Tahap 3', name: 'Application', subtitle: 'Pengisian & Unggah Berkas',
+            action: 'Mengunggah foto tempat usaha, identitas, dan surat keterangan usaha.',
+            touchpoint: 'Formulir Pendaftaran',
+            response: 'Menerima berkas pendaftaran calon penerima.',
+            burden: 'Batas ukuran foto terlalu kecil sehingga pendaftar kesulitan mengecilkan ukuran file dari ponsel.',
+            learning: true, compliance: true, psychological: false, emotion: -1,
+            opportunity: 'Meningkatkan batas ukuran unggah foto atau mengaktifkan kompresi otomatis di sistem.'
+          },
+          {
+            code: 'Tahap 4', name: 'Processing', subtitle: 'Verifikasi & Pemrosesan',
+            action: 'Menunggu proses seleksi administrasi dan verifikasi lapangan.',
+            touchpoint: 'Pengumuman Seleksi, Kunjungan Verifikator',
+            response: 'Melakukan kurasi dan verifikasi kelayakan usaha.',
+            burden: 'Jadwal pengumuman hasil seleksi mundur tanpa pemberitahuan di halaman informasi.',
+            learning: false, compliance: false, psychological: true, emotion: -1,
+            opportunity: 'Memasang jadwal tahapan seleksi yang diperbarui secara berkala di halaman utama.'
+          },
+          {
+            code: 'Tahap 5', name: 'Resolution', subtitle: 'Penerbitan Hasil Layanan',
+            action: 'Menerima penetapan penerima manfaat dan serah terima sarana usaha.',
+            touchpoint: 'Penyerahan Langsung / Lokasi Distribusi',
+            response: 'Menyerahkan bantuan sarana usaha beserta berita acara.',
+            burden: 'Proses serah terima berjalan tertib dan dibantu oleh petugas pendamping.',
+            learning: false, compliance: false, psychological: false, emotion: 2,
+            opportunity: 'Mempertahankan pendampingan langsung saat serah terima bantuan.'
+          },
+          {
+            code: 'Tahap 6', name: 'Post-Service', subtitle: 'Pasca-Layanan & Pelaporan',
+            action: 'Melaporkan pemanfaatan sarana usaha setelah 3 bulan.',
+            touchpoint: 'Pesan WhatsApp Pendamping',
+            response: 'Pendamping memantau pemanfaatan bantuan melalui foto perkembangan usaha.',
+            burden: 'Pelaporan via pesan singkat pendamping sangat memudahkan pelaku usaha mikro.',
+            learning: false, compliance: false, psychological: false, emotion: 2,
+            opportunity: 'Melanjutkan metode pemantauan sederhana berbasis foto melalui pendamping.'
+          }
+        ],
+        coDesign: {
+          discovery: 'Pelaku usaha mikro dengan literasi digital terbatas terkendala saat mengakses formulir pendaftaran dari ponsel dan mengunggah foto berukuran kecil.',
+          ideation: '1. Mengaktifkan fitur kompresi foto otomatis pada formulir pendaftaran.\n2. Menyediakan layanan bantuan tatap muka/pendamping bagi pendaftar.\n3. Menampilkan kepastian jadwal pengumuman seleksi.',
+          prototype: 'Formulir pendaftaran ramah ponsel dengan kompresi foto otomatis — Penanggung Jawab: Tim Sistem Informasi & Pendamping UMKM.'
+        }
+      },
+      kosong: {
+        unit: '',
+        service: '',
+        auditor: '',
+        period: '2025',
+        modelId: 'guardian',
+        personaName: '',
+        personaRole: '',
+        personaLiteracy: 'Sedang (Terbiasa aplikasi pesan singkat, belum familier portal teknis)',
+        personaGoal: '',
+        stages: [
+          { code: 'Tahap 1', name: 'Awareness', subtitle: 'Pencarian Informasi', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' },
+          { code: 'Tahap 2', name: 'Access', subtitle: 'Akses & Registrasi Akun', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' },
+          { code: 'Tahap 3', name: 'Application', subtitle: 'Pengisian & Unggah Berkas', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' },
+          { code: 'Tahap 4', name: 'Processing', subtitle: 'Verifikasi & Pemrosesan', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' },
+          { code: 'Tahap 5', name: 'Resolution', subtitle: 'Penerbitan Hasil Layanan', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' },
+          { code: 'Tahap 6', name: 'Post-Service', subtitle: 'Pasca-Layanan & Pelaporan', action: '', touchpoint: '', response: '', burden: '', learning: false, compliance: false, psychological: false, emotion: 0, opportunity: '' }
+        ],
+        coDesign: {
+          discovery: '',
+          ideation: '',
+          prototype: ''
+        }
+      }
+    };
+
+    // Active Application State
+    let currentPresetKey = 'perizinan';
+    let state = JSON.parse(JSON.stringify(PRESETS.perizinan));
+    let currentStep = 1;
+    let activeStageIdx = 0;
+    let boardLayout = 'grid'; // 'grid' (3 columns wide) or 'scroll' (6 columns horizontal)
+    let emotionChartInstance = null;
+    let saveToastTimer = null;
+    let resetConfirmPending = false;
+    let resetConfirmTimer = null;
+
+    // ==========================================
+    // AUTO-SAVE LOCALSTORAGE FUNCTIONS
+    // ==========================================
+    function saveStateToLocalStorage() {
+      try {
+        const payload = {
+          presetKey: currentPresetKey,
+          activeStageIdx: activeStageIdx,
+          boardLayout: boardLayout,
+          updatedAt: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          state: state
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        updateAutoSaveBadge(`Tersimpan Otomatis (${payload.updatedAt})`);
+      } catch (err) {
+        // Fallback if storage quota or privacy mode blocks localStorage
+      }
+    }
+
+    function loadStateFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.state && Array.isArray(parsed.state.stages)) {
+          state = parsed.state;
+          currentPresetKey = parsed.presetKey || 'perizinan';
+          activeStageIdx = typeof parsed.activeStageIdx === 'number' ? parsed.activeStageIdx : 0;
+          boardLayout = parsed.boardLayout || 'grid';
+          const presetSelect = document.getElementById('preset-select');
+          if (presetSelect && PRESETS[currentPresetKey]) {
+            presetSelect.value = currentPresetKey;
+          }
+          if (parsed.updatedAt) {
+            updateAutoSaveBadge(`Data Dipulihkan (${parsed.updatedAt})`);
+          }
+          return true;
+        }
+      } catch (err) {
+        return false;
+      }
+      return false;
+    }
+
+    function updateAutoSaveBadge(label) {
+      const txtEl = document.getElementById('autosave-text');
+      if (txtEl) {
+        txtEl.textContent = label;
+      }
+    }
+
+    // Two-step Reset Button (Avoids window.confirm dialog in sandbox)
+    function handleResetClick() {
+      const btn = document.getElementById('btn-reset-data');
+      const label = document.getElementById('reset-btn-label');
+      if (!resetConfirmPending) {
+        resetConfirmPending = true;
+        label.textContent = 'Yakin Reset? Klik Lagi';
+        btn.className = 'inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-500 text-white border border-rose-500 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition';
+        if (resetConfirmTimer) clearTimeout(resetConfirmTimer);
+        resetConfirmTimer = setTimeout(() => {
+          resetConfirmPending = false;
+          label.textContent = 'Reset';
+          btn.className = 'inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition';
+        }, 3500);
+      } else {
+        resetConfirmPending = false;
+        if (resetConfirmTimer) clearTimeout(resetConfirmTimer);
+        label.textContent = 'Reset';
+        btn.className = 'inline-flex items-center gap-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition';
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {}
+        loadPreset(currentPresetKey || 'perizinan');
+        updateAutoSaveBadge('Data Direset ke Awal');
+      }
+    }
+
+    // Step Navigation
+    function goToStep(stepNum) {
+      if (currentStep === 2) {
+        applyEditorValuesToState();
+      }
+      currentStep = stepNum;
+      [1, 2, 3].forEach(n => {
+        const sec = document.getElementById(`step-${n}`);
+        const btn = document.getElementById(`tab-btn-${n}`);
+        if (n === stepNum) {
+          sec.classList.remove('hidden');
+          btn.className = 'step-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 transition';
+        } else {
+          sec.classList.add('hidden');
+          btn.className = 'step-tab flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-700/60 transition';
+        }
+      });
+
+      if (stepNum === 2) {
+        renderStageSelectorTabs();
+        loadStageIntoEditor(activeStageIdx);
+        renderCJMBoard();
+        updateEmotionChart();
+      } else if (stepNum === 3) {
+        renderReportPreview();
+      }
+      saveStateToLocalStorage();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function saveStep1AndContinue() {
+      syncStep1Inputs();
+      goToStep(2);
+    }
+
+    // Load Preset
+    function loadPreset(presetKey) {
+      if (!PRESETS[presetKey]) return;
+      currentPresetKey = presetKey;
+      state = JSON.parse(JSON.stringify(PRESETS[presetKey]));
+      activeStageIdx = 0;
+      populateStep1Form();
+      renderServiceModels();
+      renderStageSelectorTabs();
+      loadStageIntoEditor(0);
+      renderCJMBoard();
+      updateEmotionChart();
+      populateCoDesignForm();
+      renderReportPreview();
+      saveStateToLocalStorage();
+    }
+
+    // Step 1 Form Sync
+    function populateStep1Form() {
+      document.getElementById('inp-unit').value = state.unit;
+      document.getElementById('inp-service').value = state.service;
+      document.getElementById('inp-auditor').value = state.auditor;
+      document.getElementById('inp-period').value = state.period;
+      document.getElementById('inp-persona-name').value = state.personaName;
+      document.getElementById('inp-persona-role').value = state.personaRole;
+      document.getElementById('inp-persona-literacy').value = state.personaLiteracy;
+      document.getElementById('inp-persona-goal').value = state.personaGoal;
+    }
+
+    function syncStep1Inputs() {
+      state.unit = document.getElementById('inp-unit').value;
+      state.service = document.getElementById('inp-service').value;
+      state.auditor = document.getElementById('inp-auditor').value;
+      state.period = document.getElementById('inp-period').value;
+      state.personaName = document.getElementById('inp-persona-name').value;
+      state.personaRole = document.getElementById('inp-persona-role').value;
+      state.personaLiteracy = document.getElementById('inp-persona-literacy').value;
+      state.personaGoal = document.getElementById('inp-persona-goal').value;
+
+      document.getElementById('cjm-banner-service').textContent = state.service || 'Layanan Belum Diisi';
+      document.getElementById('cjm-banner-persona').textContent = state.personaName || '-';
+      saveStateToLocalStorage();
+    }
+
+    // Render 5 Service Models
+    function renderServiceModels() {
+      const container = document.getElementById('service-models-grid');
+      const selectedModel = SERVICE_MODELS.find(m => m.id === state.modelId) || SERVICE_MODELS[0];
+
+      document.getElementById('header-model-badge').textContent = selectedModel.name.split(' (')[0];
+      document.getElementById('selected-model-focus').textContent = selectedModel.focus;
+
+      container.innerHTML = SERVICE_MODELS.map(m => {
+        const isSelected = m.id === state.modelId;
+        return `
+          <div onclick="selectServiceModel('${m.id}')" class="cursor-pointer rounded-lg border p-3.5 transition flex items-start gap-3 ${isSelected ? 'border-blue-900 bg-blue-50/60 ring-1 ring-blue-900' : 'border-slate-200 hover:border-slate-300 bg-white'}">
+            <div class="mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? 'border-blue-900 bg-blue-900 text-white' : 'border-slate-400'}">
+              ${isSelected ? '<div class="w-1.5 h-1.5 rounded-full bg-white"></div>' : ''}
+            </div>
+            <div class="flex-1">
+              <div class="text-xs font-bold text-slate-900">${m.name}</div>
+              <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">${m.desc}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectServiceModel(modelId) {
+      state.modelId = modelId;
+      renderServiceModels();
+      saveStateToLocalStorage();
+    }
+
+    // Emotion Formatting Helper
+    function getEmotionMeta(score) {
+      const num = Number(score);
+      if (num === 2) return { label: '+2 Sangat Puas', cls: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+      if (num === 1) return { label: '+1 Cukup Mudah', cls: 'bg-teal-100 text-teal-800 border-teal-300' };
+      if (num === 0) return { label: '0 Netral', cls: 'bg-slate-100 text-slate-700 border-slate-300' };
+      if (num === -1) return { label: '-1 Menghambat', cls: 'bg-amber-100 text-amber-800 border-amber-300' };
+      return { label: '-2 Sangat Sulit', cls: 'bg-rose-100 text-rose-800 border-rose-300' };
+    }
+
+    // Render Stage Selector Pills at top of Editor
+    function renderStageSelectorTabs() {
+      const container = document.getElementById('stage-selector-tabs');
+      if (!container) return;
+      container.innerHTML = state.stages.map((st, idx) => {
+        const isActive = idx === activeStageIdx;
+        const emo = getEmotionMeta(st.emotion);
+        return `
+          <button type="button" onclick="selectStage(${idx}, false)" class="text-left p-2.5 rounded-lg border transition flex flex-col justify-between ${isActive ? 'bg-blue-900 text-white border-blue-900 shadow-sm' : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'}">
+            <div class="flex items-center justify-between gap-1 w-full">
+              <span class="text-[10px] font-bold uppercase tracking-wider ${isActive ? 'text-amber-300' : 'text-blue-900'}">${st.code}</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded ${isActive ? 'bg-white/20 text-white' : emo.cls}">${st.emotion > 0 ? '+' + st.emotion : st.emotion}</span>
+            </div>
+            <div class="text-xs font-bold mt-1 break-words">${st.name || 'Tahap ' + (idx + 1)}</div>
+            <div class="text-[11px] ${isActive ? 'text-slate-200' : 'text-slate-500'} break-words">${st.subtitle || '-'}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    // Set CJM Board Layout ('grid' 3 cols vs 'scroll' 6 cols)
+    function setBoardLayout(mode) {
+      boardLayout = mode;
+      const grid = document.getElementById('cjm-board-grid');
+      const btnGrid = document.getElementById('layout-btn-grid');
+      const btnScroll = document.getElementById('layout-btn-scroll');
+
+      if (mode === 'grid') {
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+        btnGrid.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-white text-slate-900 shadow-sm transition';
+        btnScroll.className = 'px-2.5 py-1 rounded text-xs font-medium text-slate-600 hover:text-slate-900 transition';
+      } else {
+        grid.className = 'grid grid-cols-6 gap-4 min-w-[1620px]';
+        btnScroll.className = 'px-2.5 py-1 rounded text-xs font-semibold bg-white text-slate-900 shadow-sm transition';
+        btnGrid.className = 'px-2.5 py-1 rounded text-xs font-medium text-slate-600 hover:text-slate-900 transition';
+      }
+      saveStateToLocalStorage();
+    }
+
+    // Render 6-Column CJM Board (Full Text, Zero Line-Clamp Truncation)
+    function renderCJMBoard() {
+      document.getElementById('cjm-banner-service').textContent = state.service || 'Layanan Belum Diisi';
+      document.getElementById('cjm-banner-persona').textContent = state.personaName || '-';
+
+      const grid = document.getElementById('cjm-board-grid');
+      grid.innerHTML = state.stages.map((st, idx) => {
+        const isActive = idx === activeStageIdx;
+        const emo = getEmotionMeta(st.emotion);
+        const burdens = [];
+        if (st.learning) burdens.push('Beban Informasi');
+        if (st.compliance) burdens.push('Beban Kepatuhan');
+        if (st.psychological) burdens.push('Beban Psikologis');
+
+        return `
+          <div id="cjm-card-${idx}" onclick="selectStage(${idx}, true)" class="stage-col cursor-pointer rounded-xl border border-slate-200 p-4 flex flex-col justify-between gap-3 ${isActive ? 'active-stage' : 'bg-white hover:border-slate-300'}">
+            <div class="space-y-3">
+              <!-- Column Header: Stacked cleanly so title and badge never collide -->
+              <div class="border-b border-slate-200 pb-2.5 space-y-1.5">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">${st.code}</span>
+                  <span class="text-[11px] font-semibold px-2 py-0.5 rounded border ${emo.cls}">${emo.label}</span>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-slate-900 break-words">${st.name || '-'}</h4>
+                  <p class="text-xs text-slate-600 break-words">${st.subtitle || '-'}</p>
+                </div>
+              </div>
+
+              <!-- Customer Action (Full Text) -->
+              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200/90">
+                <div class="text-[11px] font-bold uppercase text-slate-600 mb-1">1. Aktivitas Pengguna</div>
+                <p class="text-xs text-slate-800 whitespace-pre-line break-words leading-relaxed">${st.action ? st.action : '<span class="italic text-slate-400">Belum diisi</span>'}</p>
+              </div>
+
+              <!-- Touchpoint & Response (Full Text) -->
+              <div class="bg-blue-50/40 p-2.5 rounded-lg border border-blue-200/70 space-y-1.5">
+                <div>
+                  <div class="text-[11px] font-bold uppercase text-blue-950 mb-0.5">2. Saluran Layanan (Touchpoints)</div>
+                  <div class="text-xs font-semibold text-slate-900 whitespace-pre-line break-words leading-relaxed">${st.touchpoint || '-'}</div>
+                </div>
+                <div class="pt-1 border-t border-blue-200/50">
+                  <div class="text-[11px] font-bold uppercase text-blue-950 mb-0.5">3. Respons Petugas / Sistem</div>
+                  <p class="text-xs text-slate-700 whitespace-pre-line break-words leading-relaxed">${st.response || '-'}</p>
+                </div>
+              </div>
+
+              <!-- Burden (Full Text) -->
+              <div class="bg-rose-50/60 p-2.5 rounded-lg border border-rose-200/90">
+                <div class="text-[11px] font-bold uppercase text-rose-950 mb-1">4. Hambatan Pengguna (Burden)</div>
+                <p class="text-xs text-slate-800 whitespace-pre-line break-words leading-relaxed">${st.burden ? st.burden : '<span class="italic text-slate-400">Tidak ada hambatan</span>'}</p>
+                ${burdens.length > 0 ? `<div class="mt-2 flex flex-wrap gap-1">${burdens.map(b => `<span class="text-[10px] px-2 py-0.5 rounded bg-rose-200/80 text-rose-950 font-semibold">${b}</span>`).join('')}</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Opportunity (Full Text) + Edit Button -->
+            <div class="space-y-2.5 pt-1">
+              <div class="bg-emerald-50/60 p-2.5 rounded-lg border border-emerald-200/90">
+                <div class="text-[11px] font-bold uppercase text-emerald-950 mb-1">6. Usulan Perbaikan (Opportunities)</div>
+                <p class="text-xs text-slate-800 whitespace-pre-line break-words leading-relaxed">${st.opportunity ? st.opportunity : '<span class="italic text-slate-400">Belum diisi</span>'}</p>
+              </div>
+              <button type="button" onclick="event.stopPropagation(); selectStage(${idx}, true)" class="w-full py-1.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 ${isActive ? 'bg-blue-900 text-white border-blue-900' : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border-slate-300'}">
+                <span>${isActive ? 'Sedang Diedit di Form Atas' : 'Edit Tahap Ini'}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Select a stage and load into form
+    function selectStage(idx, scrollToEditor) {
+      applyEditorValuesToState();
+      activeStageIdx = idx;
+      renderStageSelectorTabs();
+      loadStageIntoEditor(idx);
+      renderCJMBoard();
+      saveStateToLocalStorage();
+      if (scrollToEditor) {
+        const editorEl = document.getElementById('stage-editor-card');
+        if (editorEl) {
+          editorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+
+    function prevStage() {
+      applyEditorValuesToState();
+      const nextIdx = (activeStageIdx - 1 + state.stages.length) % state.stages.length;
+      activeStageIdx = nextIdx;
+      renderStageSelectorTabs();
+      loadStageIntoEditor(nextIdx);
+      renderCJMBoard();
+      saveStateToLocalStorage();
+    }
+
+    function nextStage() {
+      applyEditorValuesToState();
+      const nextIdx = (activeStageIdx + 1) % state.stages.length;
+      activeStageIdx = nextIdx;
+      renderStageSelectorTabs();
+      loadStageIntoEditor(nextIdx);
+      renderCJMBoard();
+      saveStateToLocalStorage();
+    }
+
+    function loadStageIntoEditor(idx) {
+      const st = state.stages[idx];
+      document.getElementById('ed-code').value = st.code || `Tahap ${idx + 1}`;
+      document.getElementById('ed-name').value = st.name || '';
+      document.getElementById('ed-subtitle').value = st.subtitle || '';
+      document.getElementById('ed-action').value = st.action || '';
+      document.getElementById('ed-touchpoint').value = st.touchpoint || '';
+      document.getElementById('ed-response').value = st.response || '';
+      document.getElementById('ed-burden').value = st.burden || '';
+      document.getElementById('chk-learning').checked = !!st.learning;
+      document.getElementById('chk-compliance').checked = !!st.compliance;
+      document.getElementById('chk-psychological').checked = !!st.psychological;
+      document.getElementById('ed-emotion').value = String(st.emotion);
+      document.getElementById('ed-opportunity').value = st.opportunity || '';
+    }
+
+    function applyEditorValuesToState() {
+      const st = state.stages[activeStageIdx];
+      if (!st) return;
+      const codeEl = document.getElementById('ed-code');
+      if (!codeEl) return;
+      st.code = codeEl.value.trim() || `Tahap ${activeStageIdx + 1}`;
+      st.name = document.getElementById('ed-name').value.trim() || `Tahap ${activeStageIdx + 1}`;
+      st.subtitle = document.getElementById('ed-subtitle').value.trim();
+      st.action = document.getElementById('ed-action').value;
+      st.touchpoint = document.getElementById('ed-touchpoint').value;
+      st.response = document.getElementById('ed-response').value;
+      st.burden = document.getElementById('ed-burden').value;
+      st.learning = document.getElementById('chk-learning').checked;
+      st.compliance = document.getElementById('chk-compliance').checked;
+      st.psychological = document.getElementById('chk-psychological').checked;
+      st.emotion = Number(document.getElementById('ed-emotion').value);
+      st.opportunity = document.getElementById('ed-opportunity').value;
+    }
+
+    // Background Auto-Save while typing in Stage Editor
+    function autoSaveStageDraft() {
+      applyEditorValuesToState();
+      saveStateToLocalStorage();
+    }
+
+    // Explicit Submit / OK Handler for Stage Editing
+    function submitStageEdit(advanceNext) {
+      applyEditorValuesToState();
+      renderStageSelectorTabs();
+      renderCJMBoard();
+      updateEmotionChart();
+      renderReportPreview();
+      saveStateToLocalStorage();
+
+      // Show confirmation badge
+      const toast = document.getElementById('save-toast');
+      if (toast) {
+        toast.classList.remove('hidden');
+        toast.classList.add('inline-flex');
+        if (saveToastTimer) clearTimeout(saveToastTimer);
+        saveToastTimer = setTimeout(() => {
+          toast.classList.add('hidden');
+          toast.classList.remove('inline-flex');
+        }, 3000);
+      }
+
+      if (advanceNext) {
+        const nextIdx = (activeStageIdx + 1) % state.stages.length;
+        activeStageIdx = nextIdx;
+        renderStageSelectorTabs();
+        loadStageIntoEditor(nextIdx);
+        renderCJMBoard();
+        saveStateToLocalStorage();
+      }
+    }
+
+    // Emotion Curve Chart
+    function initEmotionChart() {
+      if (typeof Chart === 'undefined') return;
+      const ctx = document.getElementById('emotionChart').getContext('2d');
+      emotionChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: state.stages.map(s => `${s.name}`),
+          datasets: [{
+            label: 'Skor Pengalaman Pengguna',
+            data: state.stages.map(s => s.emotion),
+            borderColor: '#1e3a8a',
+            backgroundColor: 'rgba(30, 58, 138, 0.08)',
+            borderWidth: 2.5,
+            pointBackgroundColor: state.stages.map(s => s.emotion < 0 ? '#e11d48' : '#059669'),
+            pointRadius: 5,
+            tension: 0.3,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              min: -2,
+              max: 2,
+              ticks: {
+                stepSize: 1,
+                font: { size: 11 }
+              },
+              grid: { color: '#e2e8f0' }
+            },
+            x: {
+              ticks: { font: { size: 11, weight: '600' } },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    function updateEmotionChart() {
+      if (!emotionChartInstance) return;
+      emotionChartInstance.data.labels = state.stages.map(s => `${s.name}`);
+      emotionChartInstance.data.datasets[0].data = state.stages.map(s => s.emotion);
+      emotionChartInstance.data.datasets[0].pointBackgroundColor = state.stages.map(s => s.emotion < 0 ? '#e11d48' : '#059669');
+      emotionChartInstance.update();
+    }
+
+    // Step 3: Co-Design & Report
+    function populateCoDesignForm() {
+      document.getElementById('cd-discovery').value = state.coDesign.discovery;
+      document.getElementById('cd-ideation').value = state.coDesign.ideation;
+      document.getElementById('cd-prototype').value = state.coDesign.prototype;
+    }
+
+    function syncCoDesign() {
+      state.coDesign.discovery = document.getElementById('cd-discovery').value;
+      state.coDesign.ideation = document.getElementById('cd-ideation').value;
+      state.coDesign.prototype = document.getElementById('cd-prototype').value;
+      renderReportPreview();
+      saveStateToLocalStorage();
+    }
+
+    function submitCoDesign() {
+      syncCoDesign();
+    }
+
+    function pullOpportunitiesFromCJM() {
+      const negativeStages = state.stages.filter(s => s.emotion < 0 || s.learning || s.compliance || s.psychological);
+      const discoveryList = negativeStages.map(s => `- ${s.name}: ${s.burden}`).filter(Boolean);
+      const ideationList = state.stages.map((s, idx) => s.opportunity ? `${idx + 1}. [${s.name}] ${s.opportunity}` : null).filter(Boolean);
+
+      if (discoveryList.length > 0) {
+        state.coDesign.discovery = discoveryList.join('\n');
+      }
+      if (ideationList.length > 0) {
+        state.coDesign.ideation = ideationList.join('\n');
+      }
+      populateCoDesignForm();
+      renderReportPreview();
+      saveStateToLocalStorage();
+    }
+
+    function renderReportPreview() {
+      const selectedModel = SERVICE_MODELS.find(m => m.id === state.modelId) || SERVICE_MODELS[0];
+      document.getElementById('rep-period').textContent = state.period || '-';
+      document.getElementById('rep-auditor').textContent = state.auditor || '-';
+      document.getElementById('rep-unit').textContent = state.unit || '-';
+      document.getElementById('rep-service').textContent = state.service || '-';
+      document.getElementById('rep-model').textContent = selectedModel.name;
+      document.getElementById('rep-persona').textContent = `${state.personaName || '-'} (${state.personaRole || '-'})`;
+      document.getElementById('rep-literacy').textContent = state.personaLiteracy || '-';
+      document.getElementById('rep-goal').textContent = state.personaGoal || '-';
+
+      const countL = state.stages.filter(s => s.learning).length;
+      const countC = state.stages.filter(s => s.compliance).length;
+      const countP = state.stages.filter(s => s.psychological).length;
+
+      document.getElementById('rep-count-learning').textContent = `${countL} / ${state.stages.length} Tahap`;
+      document.getElementById('rep-count-compliance').textContent = `${countC} / ${state.stages.length} Tahap`;
+      document.getElementById('rep-count-psychological').textContent = `${countP} / ${state.stages.length} Tahap`;
+
+      const tbody = document.getElementById('rep-cjm-tbody');
+      tbody.innerHTML = state.stages.map(st => {
+        const emo = getEmotionMeta(st.emotion);
+        const tags = [];
+        if (st.learning) tags.push('Informasi');
+        if (st.compliance) tags.push('Kepatuhan');
+        if (st.psychological) tags.push('Psikologis');
+
+        return `
+          <tr class="align-top">
+            <td class="border border-slate-300 px-2.5 py-2 font-semibold text-slate-900">
+              <div>${st.code}: ${st.name}</div>
+              <div class="text-[11px] font-normal text-slate-500">${st.subtitle}</div>
+              <div class="mt-1 inline-block text-[10px] px-1.5 py-0.5 rounded border ${emo.cls}">${emo.label}</div>
+            </td>
+            <td class="border border-slate-300 px-2.5 py-2 text-slate-800 whitespace-pre-line leading-relaxed">
+              <div class="font-medium">${st.action || '-'}</div>
+              <div class="text-[11px] text-slate-500 mt-1">Saluran: ${st.touchpoint || '-'}</div>
+            </td>
+            <td class="border border-slate-300 px-2.5 py-2 text-slate-700 whitespace-pre-line leading-relaxed">${st.response || '-'}</td>
+            <td class="border border-slate-300 px-2.5 py-2 text-slate-800 whitespace-pre-line leading-relaxed">
+              <div>${st.burden || '-'}</div>
+              ${tags.length ? `<div class="text-[10px] font-semibold text-rose-800 mt-1">Beban: ${tags.join(', ')}</div>` : ''}
+            </td>
+            <td class="border border-slate-300 px-2.5 py-2 text-slate-800 whitespace-pre-line leading-relaxed">${st.opportunity || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('rep-cd-discovery').textContent = state.coDesign.discovery || '-';
+      document.getElementById('rep-cd-ideation').textContent = state.coDesign.ideation || '-';
+      document.getElementById('rep-cd-prototype').textContent = state.coDesign.prototype || '-';
+    }
+
+    // Export PDF
+    function exportReportPDF() {
+      if (currentStep === 2) {
+        applyEditorValuesToState();
+      }
+      goToStep(3);
+      const element = document.getElementById('printable-report');
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: `Laporan_Evaluasi_CJM_${(state.service || 'Layanan').replace(/\s+/g, '_')}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(element).save();
+      } else {
+        window.print();
+      }
+    }
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', () => {
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+      loadStateFromLocalStorage();
+      populateStep1Form();
+      renderServiceModels();
+      renderStageSelectorTabs();
+      loadStageIntoEditor(activeStageIdx);
+      setBoardLayout(boardLayout);
+      renderCJMBoard();
+      initEmotionChart();
+      populateCoDesignForm();
+      renderReportPreview();
+    });
+  </script>
+</body>
+</html>

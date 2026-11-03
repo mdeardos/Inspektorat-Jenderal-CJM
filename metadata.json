@@ -1,0 +1,7 @@
+{
+  "name": "Instrumen Evaluasi Pelayanan Publik Citizen-Centric",
+  "description": "Kertas kerja interaktif pemetaan perjalanan pengguna (Customer Journey Map) dan evaluasi beban administratif pelayanan publik berbasis citizen-centric.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
