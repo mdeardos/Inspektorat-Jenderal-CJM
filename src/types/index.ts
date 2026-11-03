@@ -28,6 +28,12 @@ export interface StageItem {
   psychological: boolean; // Beban Psikologis
   emotion: number; // -2 to 2
   opportunity: string;
+  // Framework Pengawasan Internal Audit 5C
+  condition?: string; // Kondisi Temuan Lapangan
+  criteria?: string;  // Kriteria / Standar Layanan / Regulasi
+  cause?: string;     // Akar Penyebab (Root Cause)
+  consequence?: string; // Konsekuensi & Risiko bagi Pelaku Usaha
+  recommendation?: string; // Rekomendasi Tindakan Korektif (Corrective Action)
 }
 
 export interface CoDesignPlan {
