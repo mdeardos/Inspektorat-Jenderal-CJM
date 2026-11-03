@@ -616,6 +616,48 @@ export const Step3Report: React.FC<Step3ReportProps> = ({
           </div>
         </div>
 
+        {/* Section 2.5: Matriks Temuan Audit 5C */}
+        {state.stages.some(s => s.condition || s.criteria || s.cause || s.consequence || s.recommendation) && (
+          <div className="space-y-2 break-inside-avoid">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                <span>Matriks Temuan Audit Pengawasan Internal (Metodologi 5C - IPPF IIA)</span>
+              </h3>
+              <span className="text-[11px] text-amber-800 font-mono font-bold">Standard Internal Audit Kemendag</span>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-300">
+              <table className="w-full border-collapse border border-slate-300 text-xs">
+                <thead>
+                  <tr className="bg-[#07162c] text-white text-left text-[11px]">
+                    <th className="border border-slate-700 px-2.5 py-2 w-28">Tahap</th>
+                    <th className="border border-slate-700 px-2.5 py-2">1. Condition (Kondisi)</th>
+                    <th className="border border-slate-700 px-2.5 py-2">2. Criteria (Kriteria)</th>
+                    <th className="border border-slate-700 px-2.5 py-2">3. Cause (Sebab)</th>
+                    <th className="border border-slate-700 px-2.5 py-2">4. Consequence (Akibat)</th>
+                    <th className="border border-slate-700 px-2.5 py-2">5. Corrective Action (Rekomendasi)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {state.stages
+                    .filter(s => s.condition || s.criteria || s.cause || s.consequence || s.recommendation)
+                    .map((st, idx) => (
+                      <tr key={st.id || idx} className="align-top text-[11px]">
+                        <td className="border border-slate-300 p-2 font-bold text-slate-900 bg-slate-50">
+                          {st.code}: {st.name}
+                        </td>
+                        <td className="border border-slate-300 p-2 text-slate-800 leading-relaxed">{st.condition || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-blue-900 font-medium leading-relaxed">{st.criteria || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-slate-700 leading-relaxed">{st.cause || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-rose-900 font-medium leading-relaxed">{st.consequence || '-'}</td>
+                        <td className="border border-slate-300 p-2 text-emerald-950 font-bold leading-relaxed">{st.recommendation || '-'}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Section 3: Rencana Tindak Lanjut Co-Design */}
         <div className="space-y-2 break-inside-avoid">
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
