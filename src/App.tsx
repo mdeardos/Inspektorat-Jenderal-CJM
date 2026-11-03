@@ -587,6 +587,8 @@ export default function App() {
               setCurrentStep(3);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            presetKey={presetKey}
+            onSelectPreset={handleSelectPreset}
             onAddEvidence={handleAddEvidence}
             onUpdateEvidence={handleUpdateEvidence}
             onDeleteEvidence={handleDeleteEvidence}
