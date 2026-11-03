@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { EvaluationState, StageItem, AuditEvidence, SignatoryInfo } from './types';
 import { PRESETS } from './data/presets';
 import { SAMPLE_EVIDENCES } from './utils/evidenceHelpers';
-import { FloatingNavRail } from './components/FloatingNavRail';
 import { ModernCanvasHeader } from './components/ModernCanvasHeader';
 import { Step1Profile } from './components/Step1Profile';
 import { Step2CJMCanvas } from './components/Step2CJMCanvas';
@@ -22,7 +21,8 @@ import {
 const STORAGE_KEY = 'ep_citizen_centric_cjm_v2';
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState<number>(1);
+  // Default to Step 2 (Kanvas Pengujian Perjalanan CJM) for immediate modern visual impact
+  const [currentStep, setCurrentStep] = useState<number>(2);
   const [presetKey, setPresetKey] = useState<string>('perizinan');
   const [activeStageIdx, setActiveStageIdx] = useState<number>(0);
   const [saveStatus, setSaveStatus] = useState<string>('Tersimpan Otomatis');
@@ -44,12 +44,10 @@ export default function App() {
 
   // Primary Evaluation State with Multi-Team Isolated Storage
   const [state, setState] = useState<EvaluationState>(() => {
-    // Initialize default registry
     if (typeof window !== 'undefined') {
       initializeSessionRegistry();
     }
 
-    // Check URL search parameters (e.g., ?sesi=TIM-PKTN-02&pin=123456)
     let urlSessionId = '';
     let urlPin = '';
     if (typeof window !== 'undefined') {
@@ -62,7 +60,6 @@ export default function App() {
       }
     }
 
-    // 1. If URL has both session ID and PIN, attempt auto-verification
     if (urlSessionId && urlPin) {
       const auth = verifySessionAccess(urlSessionId, urlPin);
       if (auth.success) {
@@ -71,7 +68,6 @@ export default function App() {
       }
     }
 
-    // 2. Try loading from active session slot if known
     const activeId = urlSessionId ? urlSessionId.toUpperCase() : getActiveSessionId();
     if (activeId) {
       const isolatedState = loadSessionState(activeId);
@@ -80,7 +76,6 @@ export default function App() {
       }
     }
 
-    // 3. Fallback to legacy local storage if available
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -105,13 +100,11 @@ export default function App() {
     return defaultData;
   });
 
-  // Debounced Auto-Save to localStorage with Multi-Team Session Isolation
+  // Debounced Auto-Save to localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        // Save to active slot
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        // Save to isolated multi-team slot
         if (state.sessionId) {
           saveSessionState(state.sessionId, state);
         }
@@ -125,13 +118,11 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [state]);
 
-  // Connect to another verified team session
   const handleConnectSession = useCallback((newSessionId: string, newState: EvaluationState) => {
     setState(newState);
     const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
     setSaveStatus(`Terhubung ke ${newSessionId} (${now})`);
     
-    // Also sync preset key if it matches a preset
     if (newState.service?.toLowerCase().includes('impor') || newState.service?.toLowerCase().includes('inatrade')) {
       setPresetKey('perizinan');
     } else if (newState.service?.toLowerCase().includes('pengaduan') || newState.service?.toLowerCase().includes('konsumen')) {
@@ -143,12 +134,10 @@ export default function App() {
     }
   }, []);
 
-  // Patch state handler
   const handlePatchState = useCallback((patch: Partial<EvaluationState>) => {
     setState((prev) => ({ ...prev, ...patch }));
   }, []);
 
-  // Stage update handler
   const handleUpdateStage = useCallback((index: number, updatedStage: StageItem) => {
     setState((prev) => {
       const nextStages = [...prev.stages];
@@ -161,7 +150,6 @@ export default function App() {
     setState((prev) => ({ ...prev, stages }));
   }, []);
 
-  // Force immediate save to localStorage
   const handleForceSave = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -172,7 +160,6 @@ export default function App() {
     }
   }, [state]);
 
-  // Move stage left or right to reorder journey
   const handleMoveStage = useCallback((index: number, direction: 'left' | 'right') => {
     setState((prev) => {
       const targetIndex = direction === 'left' ? index - 1 : index + 1;
@@ -182,7 +169,6 @@ export default function App() {
       nextStages[index] = nextStages[targetIndex];
       nextStages[targetIndex] = temp;
       
-      // Auto-renumber code if standard 'Tahap X' format
       const renumbered = nextStages.map((s, idx) => ({
         ...s,
         code: `Tahap ${idx + 1}`
@@ -200,7 +186,6 @@ export default function App() {
     setSaveStatus('Urutan Tahapan CJM Diperbarui');
   }, [state.stages.length]);
 
-  // Co-Design patch handler
   const handlePatchCoDesign = useCallback((patch: Partial<EvaluationState['coDesign']>) => {
     setState((prev) => ({
       ...prev,
@@ -208,7 +193,6 @@ export default function App() {
     }));
   }, []);
 
-  // Signatory patch handler
   const handlePatchSignatory = useCallback((patch: Partial<SignatoryInfo>) => {
     setState((prev) => {
       const baseSignatory = prev.signatory || {
@@ -227,7 +211,6 @@ export default function App() {
     });
   }, []);
 
-  // Add new stage
   const handleAddStage = useCallback(() => {
     const nextNum = state.stages.length + 1;
     const newStage: StageItem = {
@@ -253,7 +236,6 @@ export default function App() {
     setSaveStatus('Tahap Baru Ditambahkan');
   }, [state.stages.length]);
 
-  // Delete stage
   const handleDeleteStage = useCallback((indexToDelete: number) => {
     setState((prev) => {
       if (prev.stages.length <= 1) return prev;
@@ -264,7 +246,6 @@ export default function App() {
     setSaveStatus('Tahap Berhasil Dihapus');
   }, [state.stages.length]);
 
-  // Evidence Handlers
   const handleAddEvidence = useCallback((newEvidence: AuditEvidence) => {
     setState((prev) => ({
       ...prev,
@@ -297,7 +278,6 @@ export default function App() {
     setSaveStatus('Contoh Bukti Standar Dimuat');
   }, []);
 
-  // Preset Selector
   const handleSelectPreset = useCallback((key: string) => {
     const targetPreset = PRESETS[key];
     if (!targetPreset) return;
@@ -307,7 +287,6 @@ export default function App() {
     setSaveStatus('Data Contoh Dimuat');
   }, []);
 
-  // Reset to default preset
   const handleReset = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -318,7 +297,6 @@ export default function App() {
     setSaveStatus('Data Direset ke Awal');
   }, [presetKey]);
 
-  // Pull Opportunities & Burden from CJM into Co-Design
   const handlePullOpportunities = useCallback(() => {
     const frictionStages = state.stages.filter(
       (s) => s.emotion < 0 || s.learning || s.compliance || s.psychological
@@ -345,7 +323,6 @@ export default function App() {
     setSaveStatus('Temuan CJM Berhasil Ditarik');
   }, [state.stages]);
 
-  // Export to JSON
   const handleExportJSON = useCallback(() => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(state, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -357,7 +334,6 @@ export default function App() {
     downloadAnchor.remove();
   }, [state]);
 
-  // Import JSON with thorough validation and sanitization
   const handleImportJSON = useCallback((imported: any) => {
     if (!imported || typeof imported !== 'object') return;
     
@@ -375,7 +351,12 @@ export default function App() {
           compliance: Boolean(s.compliance),
           psychological: Boolean(s.psychological),
           emotion: typeof s.emotion === 'number' ? Math.max(-2, Math.min(2, s.emotion)) : 0,
-          opportunity: s.opportunity || ''
+          opportunity: s.opportunity || '',
+          condition: s.condition || '',
+          criteria: s.criteria || '',
+          cause: s.cause || '',
+          consequence: s.consequence || '',
+          recommendation: s.recommendation || ''
         }))
       : PRESETS.perizinan.stages;
 
@@ -407,7 +388,6 @@ export default function App() {
     setSaveStatus('File JSON Berhasil Diverifikasi & Dimuat');
   }, []);
 
-  // Export Matrix to CSV
   const handleExportCSV = useCallback(() => {
     const headers = [
       'Urutan',
@@ -421,7 +401,12 @@ export default function App() {
       'Beban Kepatuhan',
       'Beban Psikologis',
       'Skor Pengalaman (-2 s.d +2)',
-      'Peluang Solusi (Opportunities)'
+      'Peluang Solusi (Opportunities)',
+      'Kondisi (5C)',
+      'Kriteria (5C)',
+      'Sebab (5C)',
+      'Akibat (5C)',
+      'Rekomendasi (5C)'
     ];
 
     const escapeCsv = (str: string | boolean | number) => {
@@ -441,7 +426,12 @@ export default function App() {
       escapeCsv(s.compliance ? 'Ya' : 'Tidak'),
       escapeCsv(s.psychological ? 'Ya' : 'Tidak'),
       escapeCsv(s.emotion),
-      escapeCsv(s.opportunity)
+      escapeCsv(s.opportunity),
+      escapeCsv(s.condition || ''),
+      escapeCsv(s.criteria || ''),
+      escapeCsv(s.cause || ''),
+      escapeCsv(s.consequence || ''),
+      escapeCsv(s.recommendation || '')
     ]);
 
     const csvContent =
@@ -457,7 +447,6 @@ export default function App() {
     downloadAnchor.remove();
   }, [state]);
 
-  // Direct Native Vector PDF Download Engine (100% Reliable, Zero CSS/Canvas Flaws)
   const handleExportPDF = useCallback(() => {
     setIsExportingPDF(true);
     setSaveStatus('Sedang Mengompilasi Dokumen PDF Resmi...');
@@ -493,7 +482,6 @@ export default function App() {
     }, 60);
   }, [state]);
 
-  // Excel (.xlsx) Multi-Sheet Workbook Generator for Evaluator Manual Edits
   const handleExportExcel = useCallback(() => {
     setSaveStatus('Sedang Mengekstrak Lembar Kerja Excel (.xlsx)...');
     const cleanService = (state.service || 'Layanan_Kemendag').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 35);
@@ -520,7 +508,6 @@ export default function App() {
     }
   }, [state]);
 
-  // Native Browser Print Dialog
   const handlePrintNative = useCallback(() => {
     setCurrentStep(3);
     setTimeout(() => {
@@ -547,28 +534,18 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#eef2f7] text-slate-900 font-sans p-2 sm:p-4 lg:p-6 flex flex-col lg:flex-row items-start gap-4 lg:gap-6 selection:bg-blue-100 selection:text-blue-900">
-      {/* Floating Pill Rail (Sisi Kiri Ramping) */}
-      <FloatingNavRail
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans flex flex-col selection:bg-amber-100 selection:text-amber-950">
+      {/* Modern Integrated Full-Bleed Executive Header */}
+      <ModernCanvasHeader
         currentStep={currentStep}
         onGoToStep={(step) => {
           setCurrentStep(step);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        evidencesCount={state.evidences?.length || 0}
-        onOpenEvidenceTracker={() => {
-          if (currentStep === 1) {
-            setCurrentStep(2);
-          }
-          setTimeout(() => {
-            const el = document.getElementById('evidence-tracker-section');
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth' });
-            } else {
-              window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-            }
-          }, 150);
-        }}
+        presetKey={presetKey}
+        onSelectPreset={handleSelectPreset}
+        saveStatus={saveStatus}
+        sessionId={state.sessionId}
         onOpenSessionModal={() => setIsSessionModalOpen(true)}
         onOpenPortal={() => setCurrentView('landing')}
         onExportPDF={handleExportPDF}
@@ -577,106 +554,83 @@ export default function App() {
         isExportingPDF={isExportingPDF}
         onExportJSON={handleExportJSON}
         onImportJSON={handleImportJSON}
-        onExportCSV={handleExportCSV}
         onReset={handleReset}
       />
 
-      {/* Main Floating White Canvas Container */}
-      <div className="flex-1 w-full bg-white rounded-2xl lg:rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col min-h-[calc(100vh-3rem)]">
-        {/* Modern Integrated Canvas Header */}
-        <ModernCanvasHeader
-          currentStep={currentStep}
-          onGoToStep={(step) => {
-            setCurrentStep(step);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          presetKey={presetKey}
-          onSelectPreset={handleSelectPreset}
-          saveStatus={saveStatus}
-          sessionId={state.sessionId}
-          onOpenSessionModal={() => setIsSessionModalOpen(true)}
-          onOpenPortal={() => setCurrentView('landing')}
-          onExportPDF={handleExportPDF}
-          onExportExcel={handleExportExcel}
-          onPrintNative={handlePrintNative}
-          isExportingPDF={isExportingPDF}
-        />
+      {/* Main Spacious Viewport Container */}
+      <main className="flex-1 max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {currentStep === 1 && (
+          <Step1Profile
+            state={state}
+            onChange={handlePatchState}
+            onOpenSessionModal={() => setIsSessionModalOpen(true)}
+            onOpenPortal={() => setCurrentView('landing')}
+            onNext={() => {
+              setCurrentStep(2);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
 
-        {/* Viewport Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {currentStep === 1 && (
-            <Step1Profile
-              state={state}
-              onChange={handlePatchState}
-              onOpenSessionModal={() => setIsSessionModalOpen(true)}
-              onOpenPortal={() => setCurrentView('landing')}
-              onNext={() => {
-                setCurrentStep(2);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
-          )}
+        {currentStep === 2 && (
+          <Step2CJMCanvas
+            state={state}
+            onUpdateStage={handleUpdateStage}
+            onBatchUpdateStages={handleBatchUpdateStages}
+            onAddStage={handleAddStage}
+            onDeleteStage={handleDeleteStage}
+            onMoveStage={handleMoveStage}
+            onForceSave={handleForceSave}
+            activeStageIdx={activeStageIdx}
+            onSetActiveStageIdx={setActiveStageIdx}
+            onNext={() => {
+              setCurrentStep(3);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onAddEvidence={handleAddEvidence}
+            onUpdateEvidence={handleUpdateEvidence}
+            onDeleteEvidence={handleDeleteEvidence}
+            onLoadSampleEvidences={handleLoadSampleEvidences}
+          />
+        )}
 
-          {currentStep === 2 && (
-            <Step2CJMCanvas
-              state={state}
-              onUpdateStage={handleUpdateStage}
-              onBatchUpdateStages={handleBatchUpdateStages}
-              onAddStage={handleAddStage}
-              onDeleteStage={handleDeleteStage}
-              onMoveStage={handleMoveStage}
-              onForceSave={handleForceSave}
-              activeStageIdx={activeStageIdx}
-              onSetActiveStageIdx={setActiveStageIdx}
-              onNext={() => {
-                setCurrentStep(3);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onAddEvidence={handleAddEvidence}
-              onUpdateEvidence={handleUpdateEvidence}
-              onDeleteEvidence={handleDeleteEvidence}
-              onLoadSampleEvidences={handleLoadSampleEvidences}
-            />
-          )}
+        {currentStep === 3 && (
+          <Step3Report
+            state={state}
+            onChangeCoDesign={handlePatchCoDesign}
+            onChangeSignatory={handlePatchSignatory}
+            onPullOpportunities={handlePullOpportunities}
+            onExportPDF={handleExportPDF}
+            onExportExcel={handleExportExcel}
+            onPrintNative={handlePrintNative}
+            isExportingPDF={isExportingPDF}
+            onBackToCanvas={() => {
+              setCurrentStep(2);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onAddEvidence={handleAddEvidence}
+            onUpdateEvidence={handleUpdateEvidence}
+            onDeleteEvidence={handleDeleteEvidence}
+            onLoadSampleEvidences={handleLoadSampleEvidences}
+          />
+        )}
+      </main>
 
-          {currentStep === 3 && (
-            <Step3Report
-              state={state}
-              onChangeCoDesign={handlePatchCoDesign}
-              onChangeSignatory={handlePatchSignatory}
-              onPullOpportunities={handlePullOpportunities}
-              onExportPDF={handleExportPDF}
-              onExportExcel={handleExportExcel}
-              onPrintNative={handlePrintNative}
-              isExportingPDF={isExportingPDF}
-              onBackToCanvas={() => {
-                setCurrentStep(2);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              onAddEvidence={handleAddEvidence}
-              onUpdateEvidence={handleUpdateEvidence}
-              onDeleteEvidence={handleDeleteEvidence}
-              onLoadSampleEvidences={handleLoadSampleEvidences}
-            />
-          )}
-        </main>
-
-        {/* Footer */}
-        <footer className="border-t border-slate-100 bg-white py-3.5 px-6 text-xs text-slate-500 no-print">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-            <div>
-              <span className="font-semibold text-slate-700">Kertas Kerja Evaluasi Pelayanan Publik Citizen-Centric</span>
-              <span className="mx-2 text-slate-300">·</span>
-              <span>Inspektorat Jenderal Kementerian Perdagangan RI</span>
-            </div>
-            <div className="text-[11px] font-mono text-slate-400">
-              Standar CJM & Pengurangan Beban Administratif
-            </div>
+      {/* Footer */}
+      <footer className="border-t border-slate-200 bg-white py-4 px-6 text-xs text-slate-500 no-print">
+        <div className="max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-800">Inspektorat Jenderal Kementerian Perdagangan RI</span>
+            <span className="text-slate-300">•</span>
+            <span>Instrumen Evaluasi Pelayanan Publik Berbasis Citizen-Centric</span>
           </div>
-        </footer>
-      </div>
+          <div className="text-[11px] font-mono text-slate-400">
+            Standar Pengawasan Internal IPPF IIA & COSO Framework
+          </div>
+        </div>
+      </footer>
 
-      {/* Multi-Team Collaboration & Access Passcode Verification Modal */}
+      {/* Multi-Team Collaboration Modal */}
       <CollaborationSessionModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
