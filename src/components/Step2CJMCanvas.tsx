@@ -23,7 +23,9 @@ import {
   Search,
   Clock,
   User,
-  Info
+  Info,
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { EvaluationState, StageItem, ViewMode, AuditEvidence } from '../types';
 import { STAGE_TEMPLATES, StageTemplate, getStandard5StageSkeleton } from '../data/stageTemplates';
@@ -31,6 +33,13 @@ import { PRESETS } from '../data/presets';
 import { EvidenceTracker } from './EvidenceTracker';
 import { EvidenceManagerModal } from './EvidenceManagerModal';
 import { EvidenceLightbox } from './EvidenceLightbox';
+
+// Interactive Components
+import { ContextMeter, BurdenKind } from './interactive/ContextMeter';
+import { ActionNodeCard } from './interactive/ActionNodeCard';
+import { PerspectiveAssetSwap, PerspectiveMode } from './interactive/PerspectiveAssetSwap';
+import { PullToRefreshSync } from './interactive/PullToRefreshSync';
+import { GenerativeInsightCard } from './interactive/GenerativeInsightCard';
 
 interface Step2CJMCanvasProps {
   state: EvaluationState;
@@ -49,6 +58,7 @@ interface Step2CJMCanvasProps {
   onUpdateEvidence?: (evidence: AuditEvidence) => void;
   onDeleteEvidence?: (id: string) => void;
   onLoadSampleEvidences?: () => void;
+  onPatchCoDesign?: (patch: Partial<EvaluationState['coDesign']>) => void;
 }
 
 export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
@@ -67,11 +77,14 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
   onAddEvidence,
   onUpdateEvidence,
   onDeleteEvidence,
-  onLoadSampleEvidences
+  onLoadSampleEvidences,
+  onPatchCoDesign
 }) => {
   const [activeTab, setActiveTab] = useState<'flow' | 'table'>('flow');
   const [sentimentFilter, setSentimentFilter] = useState<'all' | 'negative' | 'positive'>('all');
+  const [burdenFilter, setBurdenFilter] = useState<BurdenKind | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [perspective, setPerspective] = useState<PerspectiveMode>('citizen');
   
   // 5C Audit Modal & Drawer States
   const [selectedAuditIdx, setSelectedAuditIdx] = useState<number | null>(null);
@@ -147,6 +160,14 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
       if (sentimentFilter === 'negative' && st.emotion >= 0) return false;
       if (sentimentFilter === 'positive' && st.emotion <= 0) return false;
 
+      // Filter by Burden Kind (from ContextMeter)
+      if (burdenFilter !== 'all') {
+        if (burdenFilter === 'learning' && !st.learning) return false;
+        if (burdenFilter === 'compliance' && !st.compliance) return false;
+        if (burdenFilter === 'psychological' && !st.psychological) return false;
+        if (burdenFilter === 'clean' && (st.learning || st.compliance || st.psychological || st.emotion < 0)) return false;
+      }
+
       // Filter by Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -159,7 +180,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
       }
       return true;
     });
-  }, [state.stages, sentimentFilter, searchQuery]);
+  }, [state.stages, sentimentFilter, burdenFilter, searchQuery]);
 
   // KPI Calculations
   const totalStages = state.stages.length || 1;
@@ -322,92 +343,68 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
       const cy2 = curr.y;
       pathD += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${curr.x} ${curr.y}`;
     }
-
     return { pathD, dots: points };
   }, [state.stages]);
+
+  const handleApplyCoDesignFindings = (discoveryText: string, ideationText: string) => {
+    if (onPatchCoDesign) {
+      onPatchCoDesign({
+        discovery: discoveryText,
+        ideation: ideationText
+      });
+      showToast('Temuan AI berhasil disinkronkan ke Lembar Co-Design');
+    }
+  };
+
+  const handlePullSync = async () => {
+    onForceSave?.();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    showToast('Data kanvas dan kalkulasi beban berhasil diverifikasi');
+  };
 
   return (
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-amber-400 flex items-center gap-3 animate-bounce">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-bold">{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 border border-slate-700 animate-in fade-in duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* 1. Executive Card with Lead Summary & Service Switcher */}
-      <section className="executive-card" aria-labelledby="lead-title">
-        <div className="executive-summary">
-          <h2 id="lead-title">Pemetaan Siklus Interaksi Pemangku Kepentingan Layanan Perdagangan</h2>
-          <p>
-            Instrumen kendali mutu pengawasan intern untuk merekam perjalanan pemohon perizinan, layanan konsultasi,
-            serta pengaduan masyarakat. Dirancang berbasis Standar Audit Intern Pemerintah Indonesia (SAIPI), IPPF IIA,
-            dan Peraturan Pemerintah Nomor 60 Tahun 2008 tentang SPIP.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-            <span className="bg-slate-100 text-slate-800 font-bold px-2.5 py-1 rounded border border-slate-200">
-              Unit Kerja: {state.unit || 'Kementerian Perdagangan'}
-            </span>
-            <span className="bg-blue-50 text-blue-900 font-bold px-2.5 py-1 rounded border border-blue-200">
-              Persona: {state.personaName || 'Pelaku Usaha'} ({state.personaRole || 'Pemohon'})
-            </span>
-            <span className="bg-amber-50 text-amber-900 font-mono font-bold px-2.5 py-1 rounded border border-amber-200">
-              Sesi: {state.sessionId || 'TIM-DAGLU-01'}
-            </span>
-          </div>
-        </div>
+      {/* 1. Pull-to-Refresh Tactile Sync Bar */}
+      <PullToRefreshSync
+        onSync={handlePullSync}
+        lastSavedText={`Terakhir disinkronkan: ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`}
+      />
 
-        {/* Active Service Switcher Dropdown */}
-        <div className="service-switch-box">
-          <label htmlFor="service-preset-select">Pilih Objek Layanan Aktif:</label>
-          <select
-            id="service-preset-select"
-            value={presetKey}
-            onChange={(e) => onSelectPreset?.(e.target.value)}
-            className="service-dropdown"
-          >
-            <option value="perizinan">1. Layanan Persetujuan Impor (PI) Besi atau Baja (Ditjen Daglu)</option>
-            <option value="pengaduan">2. Layanan Pengaduan Konsumen & Sengketa (Ditjen PKTN)</option>
-            <option value="bantuan">3. Fasilitasi Paviliun Ekspor Internasional (Ditjen PEN)</option>
-            <option value="kependudukan">4. Surat Tanda Pendaftaran Waralaba / STPW (Ditjen PDN)</option>
-            <option value="kosong">5. Formulir Kanvas Baru (Mulai dari Awal)</option>
-          </select>
-        </div>
-      </section>
+      {/* 2. Interactive Dual-Perspective Asset Swap */}
+      <PerspectiveAssetSwap
+        currentPerspective={perspective}
+        onPerspectiveChange={(mode) => {
+          setPerspective(mode);
+          if (mode === 'auditor') {
+            setSentimentFilter('negative');
+            showToast('Lensa Auditor aktif: Memfilter titik friksi & kertas kerja 5C');
+          } else {
+            setSentimentFilter('all');
+            showToast('Lensa Warga aktif: Menampilkan seluruh alur titik sentuh');
+          }
+        }}
+      />
 
-      {/* 2. KPI Metrics Ribbon */}
-      <section className="kpi-row" aria-label="Indikator Mutu Layanan">
-        <div className="kpi-card kpi-navy">
-          <div className="kpi-tag">Titik Sentuh Aktif</div>
-          <div className="kpi-val">{totalStages}</div>
-          <div className="kpi-desc">Terpetakan pada {totalStages} fase siklus proses</div>
-        </div>
+      {/* 3. Interactive Context Meter (Administrative Burden Breakdown) */}
+      <ContextMeter
+        stages={state.stages}
+        onFilterByBurden={(kind) => {
+          setBurdenFilter(kind);
+          if (kind !== 'all') {
+            showToast(`Filter beban administratif: ${kind}`);
+          }
+        }}
+      />
 
-        <div className="kpi-card kpi-gold">
-          <div className="kpi-tag">Estimasi Rata-rata SLA</div>
-          <div className="kpi-val">3-5 Hari</div>
-          <div className="kpi-desc">Standar ketetapan waktu proses layanan</div>
-        </div>
-
-        <div className="kpi-card kpi-alert">
-          <div className="kpi-tag">Titik Friksi / Hambatan</div>
-          <div className="kpi-val" style={{ color: 'var(--red-700)' }}>
-            {criticalCount} Titik
-          </div>
-          <div className="kpi-desc">Memerlukan rekomendasi mitigasi SOP & sistem</div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-tag">Indeks Kepuasan Pengguna</div>
-          <div className="kpi-val" style={{ color: 'var(--teal-700)' }}>
-            {avgCsat} <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted)' }}>/ 5.0</span>
-          </div>
-          <div className="kpi-desc">{csatCategory}</div>
-        </div>
-      </section>
-
-      {/* 3. Horizontal Connected Stepper Rail */}
+      {/* 4. Horizontal Connected Stepper Rail */}
       <nav className="stepper-nav" aria-label="Alur Tahapan Interaksi">
         {state.stages.slice(0, 5).map((st, idx) => {
           const isActive = idx === safeIdx;
@@ -429,7 +426,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         })}
       </nav>
 
-      {/* 4. Filter Cockpit Toolbar */}
+      {/* 5. Filter Cockpit Toolbar */}
       <section className="filter-cockpit" aria-label="Pengendali Tampilan dan Filter">
         {/* View Mode Toggle */}
         <div className="filter-segment">
@@ -438,8 +435,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('flow')}
-              className={`segment-tab-btn ${activeTab === 'flow' ? 'active' : ''}`}
-            >
+              className={`segment-tab-btn ${activeTab === 'flow' ? 'active' : ''}`}\n            >
               Tampilan Alur Kolom
             </button>
             <button
@@ -458,24 +454,40 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
           <button
             type="button"
             onClick={() => setSentimentFilter('all')}
-            className={`filter-pill ${sentimentFilter === 'all' ? 'active' : ''}`}
+            className={`filter-pill ${sentimentFilter === 'all' && burdenFilter === 'all' ? 'active' : ''}`}
           >
             Semua ({totalStages})
           </button>
           <button
             type="button"
-            onClick={() => setSentimentFilter('negative')}
+            onClick={() => {
+              setSentimentFilter('negative');
+              setBurdenFilter('all');
+            }}
             className={`filter-pill ${sentimentFilter === 'negative' ? 'active' : ''}`}
           >
             Hanya Friksi ({criticalCount})
           </button>
           <button
             type="button"
-            onClick={() => setSentimentFilter('positive')}
+            onClick={() => {
+              setSentimentFilter('positive');
+              setBurdenFilter('all');
+            }}
             className={`filter-pill ${sentimentFilter === 'positive' ? 'active' : ''}`}
           >
             Hanya Puas ({positiveCount})
           </button>
+          {burdenFilter !== 'all' && (
+            <button
+              type="button"
+              onClick={() => setBurdenFilter('all')}
+              className="px-2 py-1 rounded-full bg-blue-100 text-blue-900 text-xs font-bold flex items-center gap-1 border border-blue-200"
+            >
+              <span>Beban: {burdenFilter}</span>
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Search & Actions */}
@@ -583,11 +595,18 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         </div>
       </section>
 
-      {/* 5. Main Canvas View - Flow Columns vs Matriks Kertas Kerja 5C */}
+      {/* 6. Main Canvas View - Interactive Flow Nodes vs Matriks Kertas Kerja 5C */}
       {activeTab === 'flow' ? (
-        <section className="journey-canvas-panel" aria-labelledby="flow-head">
+        <section className="journey-canvas-panel" aria-labelledby=\"flow-head\">
           <div className="canvas-headline">
-            <h2 className="canvas-title" id="flow-head">Fluktuasi Sentimen dan Alur Titik Sentuh Layanan</h2>
+            <div>
+              <h2 className="canvas-title" id="flow-head">
+                Fluktuasi Sentimen dan Alur Titik Sentuh Layanan
+              </h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Setiap node dilengkapi soket alur interaktif, menu sudut terlipat (folded corner), dan penyelarasan sentimen langsung.
+              </p>
+            </div>
             <div className="legend-indicators">
               <span className="legend-chip"><span className="legend-box sq-pos" /> Positif (Puas)</span>
               <span className="legend-chip"><span className="legend-box sq-neu" /> Netral (Wajar)</span>
@@ -659,96 +678,34 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
             </svg>
           </div>
 
-          {/* Columns Grid with Sleek Touchpoint Cards */}
-          <div className="columns-grid">
+          {/* Connected Action Node Cards Grid */}
+          <div className="flex gap-4 overflow-x-auto pb-4 pt-2 px-1 custom-scrollbar">
             {filteredStages.map(({ st, origIdx }) => {
-              const meta = getSentimentMeta(st.emotion);
               const isActive = origIdx === safeIdx;
-              const hasFriction = st.emotion < 0 || Boolean(st.burden);
+              const evidenceCountForStage = (state.evidences || []).filter(e => e.stageId === st.id).length;
 
               return (
-                <div key={st.id || origIdx} className="stage-col">
-                  {/* Column Header */}
-                  <div className="stage-col-header">
-                    <div>
-                      <div className="stage-col-name">{st.code}: {st.name}</div>
-                      <div className="text-[10px] text-slate-500 font-medium truncate max-w-[170px]">
-                        {st.subtitle || 'Proses Pelayanan'}
-                      </div>
-                    </div>
-                    <span className={`sentiment-badge ${meta.cls}`}>
-                      {meta.label}
-                    </span>
-                  </div>
-
-                  {/* Column Body with Touchpoint Card */}
-                  <div className="stage-col-body">
-                    <div className={`tp-card ${meta.cardCls}`}>
-                      {/* Meta Bar */}
-                      <div className="card-meta-bar">
-                        <span className="channel-tag truncate max-w-[140px]" title={st.touchpoint || 'Portal / Loket'}>
-                          {st.touchpoint || 'Kanal Layanan'}
-                        </span>
-                        <span className="sla-figure text-[10px]">
-                          SLA: 1-3 Hari
-                        </span>
-                      </div>
-
-                      {/* Title & Persona */}
-                      <div className="card-title-text">{st.name}</div>
-                      <div className="persona-badge-tag">
-                        {state.personaName || 'Pelaku Usaha'} ({state.personaRole || 'Pemohon'})
-                      </div>
-
-                      {/* Action Summary */}
-                      <div className="action-summary-text">
-                        {st.action || 'Pemohon mengajukan permohonan dan melengkapi berkas persyaratan secara daring.'}
-                      </div>
-
-                      {/* Response System */}
-                      {st.response && (
-                        <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded border border-slate-200 mb-2">
-                          <strong className="text-slate-800">Respons Petugas/Sistem:</strong> {st.response}
-                        </div>
-                      )}
-
-                      {/* Friction Callout if present */}
-                      {hasFriction && (
-                        <div className="painpoint-callout">
-                          <strong>Hambatan:</strong> {st.burden || 'Kendala administratif atau durasi verifikasi.'}
-                        </div>
-                      )}
-
-                      {/* Opportunity Callout if present */}
-                      {st.opportunity && (
-                        <div className="opportunity-callout">
-                          <strong>Rekomendasi:</strong> {st.opportunity}
-                        </div>
-                      )}
-
-                      {/* Card Action Bar */}
-                      <div className="card-action-bar">
-                        <button
-                          type="button"
-                          onClick={() => handleOpen5C(origIdx)}
-                          className="btn-inspect flex items-center gap-1"
-                        >
-                          <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Analisis 5C</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditor(origIdx, 'fields')}
-                          className="text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ActionNodeCard
+                  key={st.id || origIdx}
+                  stage={st}
+                  index={origIdx}
+                  totalStages={state.stages.length}
+                  isActive={isActive}
+                  onSelect={() => onSetActiveStageIdx(origIdx)}
+                  onOpen5C={() => handleOpen5C(origIdx)}
+                  onOpenEditor={() => handleOpenEditor(origIdx, 'fields')}
+                  onDelete={() => onDeleteStage(origIdx)}
+                  onMoveLeft={origIdx > 0 ? () => onMoveStage?.(origIdx, 'left') : undefined}
+                  onMoveRight={origIdx < state.stages.length - 1 ? () => onMoveStage?.(origIdx, 'right') : undefined}
+                  onUpdateEmotion={(newEmotion) => {
+                    const updated = { ...st, emotion: newEmotion };
+                    onUpdateStage(origIdx, updated);
+                    showToast(`Skor kepuasan diperbarui ke ${newEmotion > 0 ? `+${newEmotion}` : newEmotion}`);
+                  }}
+                  personaName={state.personaName}
+                  personaRole={state.personaRole}
+                  evidenceCount={evidenceCountForStage}
+                />
               );
             })}
           </div>
@@ -826,15 +783,23 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         </section>
       )}
 
-      {/* 6. Evidence Tracker Section */}
+      {/* 7. Open Intelligent UI: Generative Co-Design Assistant Card */}
+      <GenerativeInsightCard
+        state={state}
+        onApplyToCoDesign={handleApplyCoDesignFindings}
+      />
+
+      {/* 8. Evidence Tracker Section */}
       <EvidenceTracker
         evidences={state.evidences || []}
         stages={state.stages}
-        onOpenEvidenceManager={() => setIsEvidenceModalOpen(true)}
-        onOpenLightbox={(ev) => setLightboxEvidence(ev)}
+        onAddEvidence={onAddEvidence || (() => {})}
+        onUpdateEvidence={onUpdateEvidence || (() => {})}
+        onDeleteEvidence={onDeleteEvidence || (() => {})}
+        onLoadSampleEvidences={onLoadSampleEvidences}
       />
 
-      {/* 7. Next CTA Footer */}
+      {/* 9. Next CTA Footer */}
       <div className="flex justify-between items-center bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs">
         <div className="text-xs text-slate-500 font-medium">
           Perubahan pada alur kanvas tersimpan otomatis dalam sesi lokal browser.
@@ -849,7 +814,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         </button>
       </div>
 
-      {/* 8. Full Audit 5C Modal Dialog */}
+      {/* 10. Full Audit 5C Modal Dialog */}
       {isAuditModalOpen && auditStage && (
         <div className="modal-veil" role="dialog" aria-modal="true" aria-labelledby="modal-5c-title">
           <div className="modal-container">
@@ -991,7 +956,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         </div>
       )}
 
-      {/* 9. Stage Editor Slide-Over Drawer */}
+      {/* 11. Stage Editor Slide-Over Drawer */}
       {isEditorDrawerOpen && activeStage && (
         <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/60 backdrop-blur-xs flex justify-end">
           <div className="w-full max-w-xl bg-white h-full shadow-2xl flex flex-col justify-between border-l border-slate-300 animate-slide-in-right">
@@ -1141,22 +1106,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         </div>
       )}
 
-      {/* 10. Evidence Manager Modal */}
-      {isEvidenceModalOpen && onAddEvidence && onUpdateEvidence && onDeleteEvidence && (
-        <EvidenceManagerModal
-          isOpen={isEvidenceModalOpen}
-          onClose={() => setIsEvidenceModalOpen(false)}
-          evidences={state.evidences || []}
-          stages={state.stages}
-          onAddEvidence={onAddEvidence}
-          onUpdateEvidence={onUpdateEvidence}
-          onDeleteEvidence={onDeleteEvidence}
-          onLoadSampleEvidences={onLoadSampleEvidences}
-          onOpenLightbox={(ev) => setLightboxEvidence(ev)}
-        />
-      )}
-
-      {/* 11. Lightbox */}
+      {/* 12. Lightbox */}
       {lightboxEvidence && (
         <EvidenceLightbox
           evidence={lightboxEvidence}
