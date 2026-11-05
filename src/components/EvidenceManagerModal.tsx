@@ -1,8 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
-  Upload, 
-  Image as ImageIcon, 
   Trash2, 
   AlertCircle, 
   Save, 
@@ -11,10 +9,12 @@ import {
   BookOpen, 
   User, 
   Calendar,
-  ShieldAlert
+  ShieldAlert,
+  ImageIcon
 } from 'lucide-react';
 import { AuditEvidence, EvidenceCategory, EvidenceSeverity, StageItem } from '../types';
-import { compressImageFile, generatePlaceholderSvg, CATEGORY_LABELS } from '../utils/evidenceHelpers';
+import { generatePlaceholderSvg } from '../utils/evidenceHelpers';
+import { UploadDropzone } from './interactive/UploadDropzone';
 
 interface EvidenceManagerModalProps {
   isOpen: boolean;
@@ -36,8 +36,6 @@ export const EvidenceManagerModal: React.FC<EvidenceManagerModalProps> = ({
   defaultAuditor = 'Inspektorat Jenderal Kementerian Perdagangan'
 }) => {
   if (!isOpen) return null;
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [stageId, setStageId] = useState<string>(
@@ -68,33 +66,7 @@ export const EvidenceManagerModal: React.FC<EvidenceManagerModalProps> = ({
   const [imageUrl, setImageUrl] = useState<string | undefined>(
     initialEvidence?.imageUrl
   );
-
-  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-
-  // Handle image upload with auto-compression
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('Format file harus berupa gambar (JPG, PNG, WebP).');
-      return;
-    }
-
-    try {
-      setIsProcessingImage(true);
-      setErrorMsg('');
-      const { dataUrl } = await compressImageFile(file, 1200, 0.82);
-      setImageUrl(dataUrl);
-    } catch (err) {
-      console.error('Gagal mengompres gambar:', err);
-      setErrorMsg('Gagal memproses gambar. Silakan coba file lain.');
-    } finally {
-      setIsProcessingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
 
   // Generate mock illustration placeholder
   const handleUseMockSvg = () => {
@@ -139,14 +111,14 @@ export const EvidenceManagerModal: React.FC<EvidenceManagerModalProps> = ({
         className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Topbar */}
-        <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400">
-              <ShieldAlert className="w-4 h-4" />
+        {/* Header Modal */}
+        <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+              <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold tracking-tight text-white">
+              <h3 className="text-sm font-bold text-white tracking-wide">
                 {initialEvidence ? 'Sunting Bukti Lapangan' : 'Tambah Bukti Temuan Lapangan Baru'}
               </h3>
               <p className="text-[11px] text-slate-400">
@@ -243,12 +215,12 @@ export const EvidenceManagerModal: React.FC<EvidenceManagerModalProps> = ({
             </div>
           </div>
 
-          {/* Row 3: Upload Gambar / Screenshot Bukti */}
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
+          {/* Row 3: Interactive Upload Dropzone */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-800 flex items-center gap-1.5">
                 <ImageIcon className="w-4 h-4 text-blue-700" />
-                <span>Unggah Bukti Visual (Foto / Tangkapan Layar)</span>
+                <span>Unggah Bukti Visual (Foto / Tangkapan Layar / PDF)</span>
               </label>
               <button
                 type="button"
@@ -257,51 +229,17 @@ export const EvidenceManagerModal: React.FC<EvidenceManagerModalProps> = ({
                 title="Gunakan grafik ilustrasi resmi Kemendag bila belum ada berkas foto"
               >
                 <Sparkles className="w-3 h-3 text-blue-600" />
-                <span>Gunakan Ilustrasi Mockup Standar</span>
+                <span>Gunakan Mockup Standar</span>
               </button>
             </div>
 
-            {imageUrl ? (
-              <div className="relative rounded-lg overflow-hidden border border-slate-300 bg-slate-900/5 max-h-56 flex items-center justify-center p-2">
-                <img 
-                  src={imageUrl} 
-                  alt="Bukti Pengawasan" 
-                  className="max-h-52 w-auto object-contain rounded"
-                />
-                <button
-                  type="button"
-                  onClick={() => setImageUrl(undefined)}
-                  className="absolute top-3 right-3 p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md transition"
-                  title="Hapus Gambar Ini"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-5 text-center cursor-pointer transition bg-white group"
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition">
-                    <Upload className="w-4 h-4" />
-                  </div>
-                  <div className="text-xs font-semibold text-slate-800">
-                    {isProcessingImage ? 'Sedang memproses & mengompres gambar...' : 'Klik untuk memilih berkas foto / screenshot'}
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Mendukung JPG, PNG, WebP (Otomatis dikompresi agar ringan)
-                  </div>
-                </div>
-              </div>
-            )}
+            <UploadDropzone
+              onFileAccepted={(_file, dataUrl) => {
+                setImageUrl(dataUrl);
+                setErrorMsg('');
+              }}
+              initialPreviewUrl={imageUrl}
+            />
           </div>
 
           {/* Row 4: Catatan Fakta Temuan Lapangan */}
