@@ -593,6 +593,7 @@ export default function App() {
             onUpdateEvidence={handleUpdateEvidence}
             onDeleteEvidence={handleDeleteEvidence}
             onLoadSampleEvidences={handleLoadSampleEvidences}
+            onPatchCoDesign={handlePatchCoDesign}
           />
         )}
 
