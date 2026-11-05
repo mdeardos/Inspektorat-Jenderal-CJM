@@ -5,11 +5,13 @@ import {
   Printer, 
   Loader2, 
   Check, 
-  FolderOpen,
-  Users,
-  Upload,
-  Download,
-  RotateCcw
+  Users, 
+  Download, 
+  RotateCcw,
+  Building,
+  ShieldCheck,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react';
 import { EvaluationState } from '../types';
 
@@ -69,56 +71,68 @@ export const ModernCanvasHeader: React.FC<ModernCanvasHeaderProps> = ({
   };
 
   const steps = [
-    {
-      num: 1,
-      title: 'Identifikasi Objek',
-      shortTitle: '1. Identifikasi Objek'
-    },
-    {
-      num: 2,
-      title: 'Kanvas CJM & Audit 5C',
-      shortTitle: '2. Kanvas CJM & Audit 5C'
-    },
-    {
-      num: 3,
-      title: 'Co-Design & Laporan',
-      shortTitle: '3. Co-Design & Laporan'
-    }
+    { num: 1, title: 'Identifikasi Objek', shortTitle: 'Identifikasi Objek' },
+    { num: 2, title: 'Kanvas CJM & Audit 5C', shortTitle: 'Kanvas CJM & Audit 5C' },
+    { num: 3, title: 'Co-Design & Rekomendasi', shortTitle: 'Co-Design & Rekomendasi' }
   ];
 
   return (
-    <header className="no-print select-none">
-      {/* Top Government Masthead Strip */}
-      <div className="gov-masthead-strip">
-        <div className="gov-badge">
-          <span className="indonesia-flag" aria-hidden="true" />
-          <span>INSPEKTORAT JENDERAL &bull; KEMENTERIAN PERDAGANGAN REPUBLIK INDONESIA</span>
-        </div>
-        <div className="flex items-center gap-3 text-slate-400 text-[11px] font-semibold">
-          <span className="hidden sm:inline">Sistem Pengawasan Internal Pemerintah (SPIP) &bull; Standar IPPF IIA</span>
-          <span className="bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded border border-slate-700 text-[10px]">
-            {saveStatus}
-          </span>
+    <header className="no-print select-none border-b border-slate-800 bg-[#070e1e] text-white">
+      {/* Top Republic of Indonesia Masthead */}
+      <div className="border-b border-white/10 bg-[#050a16] px-4 py-1.5 text-xs">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            {/* Merah Putih flag */}
+            <div className="flex h-3 w-4.5 flex-col overflow-hidden rounded-xs border border-white/20 shadow-xs" aria-hidden="true">
+              <div className="h-1.5 bg-[#ef4444]" />
+              <div className="h-1.5 bg-white" />
+            </div>
+            <span className="font-semibold tracking-wide text-slate-300">
+              KEMENTERIAN PERDAGANGAN REPUBLIK INDONESIA
+            </span>
+            <span className="hidden text-slate-600 sm:inline">|</span>
+            <span className="hidden text-amber-400 font-semibold sm:inline">
+              INSPEKTORAT JENDERAL (ITJEN)
+            </span>
+          </div>
+
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="flex items-center gap-1.5 font-mono text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              {saveStatus}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Main Core Header */}
-      <div className="header-core">
-        <div className="header-layout">
+      {/* Main Navigation & Brand Header */}
+      <div className="px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
+          
           {/* Brand Cluster */}
-          <div className="brand-cluster">
-            <div className="seal-box" aria-label="Logo Resmi Itjen Kemendag">
-              <span>ITJEN</span>
-              <span className="sub">KEMENDAG</span>
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-[#0d1b38] border border-amber-500/40 text-amber-400 shadow-md">
+              <ShieldCheck className="h-5 w-5 text-amber-400" />
+              <span className="text-[8px] font-extrabold tracking-wider text-amber-200">ITJEN</span>
             </div>
-            <div className="brand-headings">
-              <h1>Customer Journey Map (CJM) Layanan Pengawasan</h1>
-              <p>Pemantauan Pengalaman Auditee, Pengadu Masyarakat (WBS), dan Perumusan Rekomendasi 5C</p>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-extrabold tracking-tight text-white sm:text-lg">
+                  Instrumen Audit & Customer Journey Mapping
+                </h1>
+                <span className="hidden rounded-md bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-400/20 lg:inline">
+                  Kemendag 5C
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                Pengawasan Intern Pelayanan Publik & Rekomendasi Audit Kualitatif
+              </p>
             </div>
           </div>
 
-          {/* Phase Navigation Tabs */}
-          <nav className="flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800" aria-label="Navigasi Fase">
+          {/* Stepper Navigation */}
+          <nav className="flex items-center rounded-xl bg-slate-900/90 p-1 border border-slate-800" aria-label="Alur Pengisian">
             {steps.map((step) => {
               const isActive = currentStep === step.num;
               const isPast = currentStep > step.num;
@@ -128,16 +142,16 @@ export const ModernCanvasHeader: React.FC<ModernCanvasHeaderProps> = ({
                   key={step.num}
                   type="button"
                   onClick={() => onGoToStep(step.num)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                     isActive
-                      ? 'bg-amber-400 text-slate-950 shadow-sm'
+                      ? 'bg-amber-400 text-slate-950 font-bold shadow-sm'
                       : isPast
-                      ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800/60'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      ? 'text-emerald-400 hover:bg-slate-800/80 hover:text-emerald-300'
+                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                   }`}
                 >
                   <div
-                    className={`w-4.5 h-4.5 rounded flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                    className={`flex h-4.5 w-4.5 items-center justify-center rounded text-[10px] font-mono font-bold ${
                       isActive
                         ? 'bg-slate-950 text-amber-400'
                         : isPast
@@ -145,17 +159,89 @@ export const ModernCanvasHeader: React.FC<ModernCanvasHeaderProps> = ({
                         : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {isPast ? <Check className="w-3 h-3 stroke-[3]" /> : step.num}
+                    {isPast ? <Check className="h-3 w-3 stroke-[3]" /> : step.num}
                   </div>
-                  <span>{step.shortTitle}</span>
+                  <span className="hidden sm:inline">{step.shortTitle}</span>
+                  <span className="sm:hidden">{step.num}</span>
                 </button>
               );
             })}
           </nav>
 
-          {/* Header Controls */}
-          <div className="header-controls">
-            {/* Hidden File Input for JSON import */}
+          {/* Action Tools */}
+          <div className="flex items-center gap-2">
+            {/* Session Room Button */}
+            <button
+              type="button"
+              onClick={onOpenSessionModal || onOpenPortal}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700 hover:text-white hover:border-slate-600 cursor-pointer shadow-xs"
+              title="Kelola Ruang Kerja Sesi Tim & Inspektorat"
+            >
+              <Users className="h-3.5 w-3.5 text-amber-400" />
+              <span className="font-mono text-[11px] text-amber-300 font-bold">
+                {sessionId || 'ITJEN-DAGLU-01'}
+              </span>
+            </button>
+
+            {/* Portal Inspektorat Link */}
+            {onOpenPortal && (
+              <button
+                type="button"
+                onClick={onOpenPortal}
+                className="hidden xl:flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/50 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition cursor-pointer"
+                title="Buka Beranda Portal 4 Inspektorat"
+              >
+                <Building className="h-3.5 w-3.5 text-blue-400" />
+                <span>Portal Tim</span>
+              </button>
+            )}
+
+            {/* Export Excel */}
+            {onExportExcel && (
+              <button
+                type="button"
+                onClick={onExportExcel}
+                className="flex items-center gap-1 rounded-lg border border-emerald-600/40 bg-emerald-950/40 px-2.5 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/60 hover:text-emerald-100 transition cursor-pointer"
+                title="Unduh Kertas Kerja Format Excel (XLSX)"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="hidden lg:inline">Excel</span>
+              </button>
+            )}
+
+            {/* Export PDF */}
+            <button
+              type="button"
+              disabled={isExportingPDF}
+              onClick={onExportPDF}
+              className="flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800/80 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-700 hover:text-white transition cursor-pointer disabled:opacity-50"
+              title="Unduh Dokumen Resmi Format PDF"
+            >
+              {isExportingPDF ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-300" />
+                  <span>PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="h-3.5 w-3.5 text-amber-400" />
+                  <span>PDF</span>
+                </>
+              )}
+            </button>
+
+            {/* Print Document */}
+            <button
+              type="button"
+              onClick={onPrintNative}
+              className="flex items-center gap-1 rounded-lg bg-amber-400 px-3 py-1.5 text-xs font-bold text-slate-950 hover:bg-amber-300 transition cursor-pointer shadow-xs"
+              title="Cetak Langsung Lembar Evaluasi"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Cetak Dokumen</span>
+            </button>
+
+            {/* Hidden JSON File Input */}
             <input
               type="file"
               ref={fileInputRef}
@@ -163,78 +249,8 @@ export const ModernCanvasHeader: React.FC<ModernCanvasHeaderProps> = ({
               accept=".json"
               className="hidden"
             />
-
-            {/* Quick Session ID Pill */}
-            <button
-              type="button"
-              onClick={onOpenSessionModal || onOpenPortal}
-              className="btn btn-navy btn-sm"
-              title="Kelola Ruang Kerja Tim Pengawasan"
-            >
-              <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span className="font-mono text-[11px] text-amber-300">
-                {sessionId || 'ITJEN-DAGLU-01'}
-              </span>
-            </button>
-
-            {/* JSON Export */}
-            {onExportJSON && (
-              <button
-                type="button"
-                onClick={onExportJSON}
-                className="btn btn-navy btn-sm"
-                title="Unduh seluruh data dalam format JSON"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-300" />
-                <span>Unduh JSON</span>
-              </button>
-            )}
-
-            {/* Reset Data */}
-            {onReset && (
-              <button
-                type="button"
-                onClick={onReset}
-                className="btn btn-navy btn-sm"
-                title="Reset formulir ke data awal"
-              >
-                <RotateCcw className="w-3.5 h-3.5 text-slate-300" />
-                <span>Reset</span>
-              </button>
-            )}
-
-            {/* PDF Export */}
-            <button
-              type="button"
-              disabled={isExportingPDF}
-              onClick={onExportPDF}
-              className="btn btn-navy btn-sm"
-              title="Unduh dokumen resmi PDF"
-            >
-              {isExportingPDF ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
-                  <span>PDF...</span>
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-3.5 h-3.5 text-amber-300" />
-                  <span>PDF</span>
-                </>
-              )}
-            </button>
-
-            {/* Print View Native Button */}
-            <button
-              type="button"
-              onClick={onPrintNative}
-              className="btn btn-gold btn-sm"
-              title="Cetak langsung dokumen formulir resmi"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Cetak Dokumen</span>
-            </button>
           </div>
+
         </div>
       </div>
     </header>

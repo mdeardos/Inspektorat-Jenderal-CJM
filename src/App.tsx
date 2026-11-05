@@ -620,16 +620,9 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 px-6 text-xs text-slate-500 no-print">
-        <div className="max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">Inspektorat Jenderal Kementerian Perdagangan RI</span>
-            <span className="text-slate-300">•</span>
-            <span>Instrumen Evaluasi Pelayanan Publik Berbasis Citizen-Centric</span>
-          </div>
-          <div className="text-[11px] font-mono text-slate-400">
-            Standar Pengawasan Internal IPPF IIA & COSO Framework
-          </div>
+      <footer className="border-t border-slate-200 bg-white py-3.5 px-6 text-xs text-slate-500 no-print">
+        <div className="max-w-[1720px] mx-auto flex items-center justify-between">
+          <span className="font-semibold text-slate-700">Inspektorat Jenderal Kementerian Perdagangan RI</span>
         </div>
       </footer>
 

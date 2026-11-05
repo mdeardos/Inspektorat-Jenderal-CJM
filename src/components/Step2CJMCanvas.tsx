@@ -435,7 +435,8 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('flow')}
-              className={`segment-tab-btn ${activeTab === 'flow' ? 'active' : ''}`}\n            >
+              className={`segment-tab-btn ${activeTab === 'flow' ? 'active' : ''}`}
+            >
               Tampilan Alur Kolom
             </button>
             <button
@@ -597,7 +598,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
 
       {/* 6. Main Canvas View - Interactive Flow Nodes vs Matriks Kertas Kerja 5C */}
       {activeTab === 'flow' ? (
-        <section className="journey-canvas-panel" aria-labelledby=\"flow-head\">
+        <section className="journey-canvas-panel" aria-labelledby="flow-head">
           <div className="canvas-headline">
             <div>
               <h2 className="canvas-title" id="flow-head">
