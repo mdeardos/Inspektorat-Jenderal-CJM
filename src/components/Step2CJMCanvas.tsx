@@ -40,6 +40,7 @@ import { ActionNodeCard } from './interactive/ActionNodeCard';
 import { PerspectiveAssetSwap, PerspectiveMode } from './interactive/PerspectiveAssetSwap';
 import { PullToRefreshSync } from './interactive/PullToRefreshSync';
 import { GenerativeInsightCard } from './interactive/GenerativeInsightCard';
+import { InteractiveStageDisplay } from './interactive/InteractiveStageDisplay';
 
 interface Step2CJMCanvasProps {
   state: EvaluationState;
@@ -425,6 +426,18 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
           );
         })}
       </nav>
+
+      <InteractiveStageDisplay
+        stages={state.stages}
+        activeIndex={safeIdx}
+        onSelectStage={onSetActiveStageIdx}
+        onUpdateEmotion={(index, emotion) => {
+          const stage = state.stages[index];
+          if (!stage) return;
+          onUpdateStage(index, { ...stage, emotion });
+          showToast(`Skor pengalaman ${emotion > 0 ? `+${emotion}` : emotion} diperbarui`);
+        }}
+      />
 
       {/* 5. Filter Cockpit Toolbar */}
       <section className="filter-cockpit" aria-label="Pengendali Tampilan dan Filter">
