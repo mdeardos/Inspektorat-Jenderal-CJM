@@ -41,6 +41,7 @@ import { PerspectiveAssetSwap, PerspectiveMode } from './interactive/Perspective
 import { PullToRefreshSync } from './interactive/PullToRefreshSync';
 import { GenerativeInsightCard } from './interactive/GenerativeInsightCard';
 import { InteractiveStageDisplay } from './interactive/InteractiveStageDisplay';
+import { CjmOverviewDashboard } from './interactive/CjmOverviewDashboard';
 
 interface Step2CJMCanvasProps {
   state: EvaluationState;
@@ -86,6 +87,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
   const [burdenFilter, setBurdenFilter] = useState<BurdenKind | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [perspective, setPerspective] = useState<PerspectiveMode>('citizen');
+  const [isFrictionFocus, setIsFrictionFocus] = useState(false);
   
   // 5C Audit Modal & Drawer States
   const [selectedAuditIdx, setSelectedAuditIdx] = useState<number | null>(null);
@@ -157,6 +159,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
   // Filtered Stages Calculation
   const filteredStages = useMemo(() => {
     return state.stages.map((st, origIdx) => ({ st, origIdx })).filter(({ st }) => {
+      if (isFrictionFocus && !(st.emotion < 0 || st.burden || st.learning || st.compliance || st.psychological)) return false;
       // Filter by Sentiment
       if (sentimentFilter === 'negative' && st.emotion >= 0) return false;
       if (sentimentFilter === 'positive' && st.emotion <= 0) return false;
@@ -181,7 +184,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
       }
       return true;
     });
-  }, [state.stages, sentimentFilter, burdenFilter, searchQuery]);
+  }, [state.stages, sentimentFilter, burdenFilter, searchQuery, isFrictionFocus]);
 
   // KPI Calculations
   const totalStages = state.stages.length || 1;
@@ -379,6 +382,20 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
         lastSavedText={`Terakhir disinkronkan: ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`}
       />
 
+      <CjmOverviewDashboard
+        stages={state.stages}
+        evidences={state.evidences || []}
+        activeIndex={safeIdx}
+        isFrictionFocus={isFrictionFocus}
+        onToggleFrictionFocus={() => {
+          setIsFrictionFocus((current) => !current);
+          setSentimentFilter('all');
+          setBurdenFilter('all');
+          setSearchQuery('');
+        }}
+        onSelectStage={onSetActiveStageIdx}
+      />
+
       {/* 2. Interactive Dual-Perspective Asset Swap */}
       <PerspectiveAssetSwap
         currentPerspective={perspective}
@@ -467,8 +484,11 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
           <span className="filter-label-text">Filter:</span>
           <button
             type="button"
-            onClick={() => setSentimentFilter('all')}
-            className={`filter-pill ${sentimentFilter === 'all' && burdenFilter === 'all' ? 'active' : ''}`}
+            onClick={() => {
+              setSentimentFilter('all');
+              setIsFrictionFocus(false);
+            }}
+            className={`filter-pill ${sentimentFilter === 'all' && burdenFilter === 'all' && !isFrictionFocus ? 'active' : ''}`}
           >
             Semua ({totalStages})
           </button>
@@ -477,6 +497,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
             onClick={() => {
               setSentimentFilter('negative');
               setBurdenFilter('all');
+              setIsFrictionFocus(false);
             }}
             className={`filter-pill ${sentimentFilter === 'negative' ? 'active' : ''}`}
           >
@@ -487,6 +508,7 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
             onClick={() => {
               setSentimentFilter('positive');
               setBurdenFilter('all');
+              setIsFrictionFocus(false);
             }}
             className={`filter-pill ${sentimentFilter === 'positive' ? 'active' : ''}`}
           >
