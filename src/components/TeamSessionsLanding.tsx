@@ -35,6 +35,7 @@ import {
 } from '../utils/sessionManager';
 import { PRESETS } from '../data/presets';
 import { SAMPLE_EVIDENCES } from '../utils/evidenceHelpers';
+import { PortalDashboard } from './PortalDashboard';
 
 interface TeamSessionsLandingProps {
   currentSessionId: string;
@@ -381,8 +382,14 @@ export const TeamSessionsLanding: React.FC<TeamSessionsLandingProps> = ({
 
       {/* 2. MAIN CONTAINER */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 space-y-6">
+        <PortalDashboard
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          currentState={currentState}
+          onContinueCurrentCanvas={onContinueCurrentCanvas}
+        />
         {/* Simple Step Banner */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-7 shadow-xs">
+        <div id="inspektorat-selector" className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-7 shadow-xs">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#0b1c3d] text-xs font-bold font-mono mb-2.5">
               <Scale className="w-3.5 h-3.5 text-blue-700" />
@@ -473,7 +480,7 @@ export const TeamSessionsLanding: React.FC<TeamSessionsLandingProps> = ({
         </div>
 
         {/* 3. STEP 2: TEAMS DIRECTORY WITH DIRECT 1-CLICK ACCESS */}
-        <section className="space-y-4">
+        <section id="team-directory" className="space-y-4">
           <div className="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-4">
             {/* Context Header for Selected Inspektorat */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
@@ -649,7 +656,7 @@ export const TeamSessionsLanding: React.FC<TeamSessionsLandingProps> = ({
         </section>
 
         {/* 4. CLEAN COLLAPSIBLE SECONDARY OPTIONS (BUAT TIM BARU / KODE KUSTOM) */}
-        <section className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xs">
+        <section id="team-settings" className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-2xs">
           <button
             type="button"
             onClick={() => setShowAdvanced(!showAdvanced)}
