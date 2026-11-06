@@ -39,7 +39,7 @@ export default function App() {
         // ignore
       }
     }
-    return 'canvas';
+    return 'landing';
   });
 
   // Primary Evaluation State with Multi-Team Isolated Storage
