@@ -111,9 +111,14 @@ export const ModernCanvasHeader: React.FC<ModernCanvasHeaderProps> = ({
           
           {/* Brand Cluster */}
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-gradient-to-br from-slate-900 to-[#0d1b38] border border-amber-500/40 text-amber-400 shadow-md">
-              <ShieldCheck className="h-5 w-5 text-amber-400" />
-              <span className="text-[8px] font-extrabold tracking-wider text-amber-200">ITJEN</span>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white border border-amber-500/50 shadow-md overflow-hidden">
+              <img
+                src="/assets/aistudio/image_6fb22ebf.png"
+                alt="Logo Inspektorat Jenderal Kementerian Perdagangan"
+                width={44}
+                height={44}
+                className="h-10 w-10 object-contain"
+              />
             </div>
 
             <div>

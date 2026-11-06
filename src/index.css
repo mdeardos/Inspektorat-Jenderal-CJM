@@ -759,3 +759,177 @@
 .animate-fade-in {
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Kemendag dossier visual system.
+ * Purpose: give every working stage one recognizable identity. Navy carries
+ * official structure, teal marks movement through the service journey, and
+ * merah-putih is reserved for the national masthead and attention states.
+ * The soft organic fields are CSS art, not content, and remain behind the
+ * working surface so evidence and audit controls stay readable.
+ */
+:root {
+  --kemendag-navy: #132238;
+  --kemendag-ink: #1f2937;
+  --kemendag-teal: #267a78;
+  --kemendag-red: #b4232b;
+  --kemendag-paper: #f4f5f1;
+  --kemendag-line: #d8dedb;
+}
+
+html { background: var(--kemendag-paper); }
+body {
+  background: var(--kemendag-paper);
+  color: var(--kemendag-ink);
+}
+
+.app-shell,
+.portal-shell {
+  position: relative;
+  isolation: isolate;
+  background: var(--kemendag-paper) !important;
+}
+
+.app-shell::before,
+.portal-shell::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  top: 4.5rem;
+  right: -7rem;
+  width: min(42vw, 38rem);
+  height: 18rem;
+  border-radius: 45% 55% 52% 48%;
+  background: linear-gradient(135deg, rgb(76 151 173 / 0.2), rgb(255 255 255 / 0.08) 56%, rgb(190 65 67 / 0.13));
+  filter: blur(2px);
+  transform: rotate(-12deg);
+  pointer-events: none;
+}
+
+.app-shell::after,
+.portal-shell::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  bottom: 2rem;
+  left: -8rem;
+  width: 26rem;
+  height: 14rem;
+  border: 1px solid rgb(38 122 120 / 0.17);
+  border-radius: 50%;
+  transform: rotate(18deg);
+  pointer-events: none;
+}
+
+.app-shell > main,
+.portal-shell > main {
+  position: relative;
+}
+
+.app-shell > main::before,
+.portal-shell > main::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  left: 0;
+  width: 4rem;
+  height: 0.2rem;
+  background: var(--kemendag-red);
+  opacity: 0.75;
+}
+
+.app-shell h1,
+.app-shell h2,
+.app-shell h3,
+.portal-shell h1,
+.portal-shell h2,
+.portal-shell h3 {
+  color: var(--kemendag-navy);
+  text-wrap: balance;
+}
+
+.app-shell p,
+.portal-shell p { text-wrap: pretty; }
+
+.app-shell > main > *,
+.portal-shell > main > * {
+  border-color: var(--kemendag-line);
+}
+
+.app-shell .bg-white,
+.portal-shell .bg-white {
+  background-color: rgb(255 255 255 / 0.9) !important;
+}
+
+.app-shell .shadow-xs,
+.app-shell .shadow-sm,
+.app-shell .shadow-md,
+.portal-shell .shadow-xs,
+.portal-shell .shadow-sm,
+.portal-shell .shadow-md {
+  box-shadow: 0 8px 24px rgb(19 34 56 / 0.06);
+}
+
+.portal-shell header {
+  background: rgb(255 255 255 / 0.96);
+  border-bottom-color: var(--kemendag-line);
+}
+
+.portal-shell .portal-brand-mark,
+.portal-shell img[alt*="Logo"] {
+  border-color: rgb(180 35 43 / 0.28);
+}
+
+.portal-shell button[class*="bg-[#0b1c3d]"],
+.portal-shell button[class*="bg-\\[\\#0b1c3d\\]"],
+.app-shell button.bg-amber-400 {
+  background: var(--kemendag-navy) !important;
+}
+
+.portal-shell button[class*="bg-[#0b1c3d]"]:hover,
+.app-shell button.bg-amber-400:hover { background: #24466a !important; }
+
+.portal-shell .portal-panel,
+.portal-shell .portal-dashboard,
+.portal-shell section[id] {
+  border-color: var(--kemendag-line);
+  box-shadow: 0 10px 28px rgb(19 34 56 / 0.055);
+}
+
+.app-shell .interactive-stage-display,
+.app-shell .filter-cockpit,
+.app-shell .stepper-nav,
+.app-shell .cjm-overview-card,
+.app-shell .cjm-overview-panel {
+  border-color: var(--kemendag-line);
+  box-shadow: 0 10px 28px rgb(19 34 56 / 0.055);
+}
+
+.app-shell .stepper-step.active,
+.app-shell .interactive-stage-node.active {
+  background: #e7f2f0;
+  border-color: #77aaa5;
+  color: var(--kemendag-navy);
+}
+
+.app-shell .stepper-step.active .step-circle,
+.app-shell .interactive-stage-node.active .interactive-stage-node-number {
+  background: var(--kemendag-teal);
+  color: white;
+}
+
+.app-shell .interactive-stage-detail.positive { border-left-color: var(--kemendag-teal); }
+.app-shell .cjm-progress-track span { background: var(--kemendag-teal); }
+
+button, a, input, select, textarea, [role="button"] { cursor: pointer; }
+button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .app-shell::before,
+  .portal-shell::before { width: 19rem; height: 10rem; right: -9rem; opacity: 0.65; }
+  .app-shell::after,
+  .portal-shell::after { left: -13rem; width: 22rem; height: 10rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

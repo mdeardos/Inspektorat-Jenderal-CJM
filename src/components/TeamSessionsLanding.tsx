@@ -315,7 +315,7 @@ export const TeamSessionsLanding: React.FC<TeamSessionsLandingProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 pb-16">
+    <div className="portal-shell min-h-screen bg-[#f1f5f9] text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900 pb-16">
       {/* 1. TOP OFFICIAL HEADER */}
       <header className="bg-white border-b border-slate-200/90 sticky top-0 z-30 shadow-2xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">

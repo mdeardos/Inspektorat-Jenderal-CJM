@@ -32,7 +32,7 @@ export const PortalDashboard: React.FC<PortalDashboardProps> = ({ sessions, curr
     <section className="portal-dashboard" aria-labelledby="portal-dashboard-title">
       <aside className="portal-dashboard-sidebar">
         <div className="portal-brand">
-          <div className="portal-brand-mark"><img src="/assets/aistudio/image_6fb22ebf.png" alt="Logo Inspektorat Jenderal Kemendag" /></div>
+          <div className="portal-brand-mark"><img src="/assets/aistudio/image_6fb22ebf.png" alt="Logo Inspektorat Jenderal Kemendag" width={48} height={48} /></div>
           <div><strong>Itjen Kemendag</strong><span>Portal Evaluasi CJM</span></div>
         </div>
         <nav className="portal-dashboard-nav" aria-label="Navigasi dashboard">

@@ -534,7 +534,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans flex flex-col selection:bg-amber-100 selection:text-amber-950">
+    <div className="app-shell min-h-screen bg-[#f8fafc] text-slate-900 font-sans flex flex-col selection:bg-amber-100 selection:text-amber-950">
       {/* Modern Integrated Full-Bleed Executive Header */}
       <ModernCanvasHeader
         currentStep={currentStep}
