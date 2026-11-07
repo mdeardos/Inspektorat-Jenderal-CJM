@@ -322,19 +322,19 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
 
   // Dynamic SVG Curve Points Calculation
   const svgCurveData = useMemo(() => {
-    if (state.stages.length === 0) return { pathD: '', dots: [] };
+    if (state.stages.length === 0) return { pathD: '', areaD: '', dots: [], guides: [] };
     const stageWidth = 1000 / Math.max(1, state.stages.length);
     const points = state.stages.map((st, idx) => {
       const x = (idx * stageWidth) + (stageWidth / 2);
-      // Map emotion -2 to +2 to y 60 (lowest) to y 15 (highest)
+      // Map emotion -2 to +2 to y 130 (lowest) to y 28 (highest)
       const normalizedScore = (st.emotion + 2) / 4; // 0.0 to 1.0
-      const y = 60 - (normalizedScore * 45);
+      const y = 130 - (normalizedScore * 102);
       const score1to5 = (normalizedScore * 4 + 1).toFixed(1);
-      return { x, y, score: score1to5, emotion: st.emotion, name: st.name };
+      return { x, y, score: score1to5, emotion: st.emotion, name: st.name, code: st.code };
     });
 
     if (points.length < 2) {
-      return { pathD: `M ${points[0].x} ${points[0].y}`, dots: points };
+      return { pathD: `M ${points[0].x} ${points[0].y}`, areaD: '', dots: points, guides: [28, 79, 130] };
     }
 
     let pathD = `M ${points[0].x} ${points[0].y}`;
@@ -347,7 +347,8 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
       const cy2 = curr.y;
       pathD += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${curr.x} ${curr.y}`;
     }
-    return { pathD, dots: points };
+    const areaD = `${pathD} L ${points[points.length - 1].x} 148 L ${points[0].x} 148 Z`;
+    return { pathD, areaD, dots: points, guides: [28, 53.5, 79, 104.5, 130] };
   }, [state.stages]);
 
   const handleApplyCoDesignFindings = (discoveryText: string, ideationText: string) => {
@@ -651,34 +652,55 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
           </div>
 
           {/* Sentiment Fluctuation Curve SVG */}
-          <div className="curve-card-wrap" aria-label="Grafik Kurva Sentimen">
-            <div className="flex justify-between items-center text-[11px] font-bold text-slate-500 mb-2">
-              <span>KURVA KEPUASAN PENGGUNA PER TAHAPAN PROSES</span>
-              <span>Skor: 1.0 (Friksi Berat) s.d. 5.0 (Sangat Puas)</span>
+          <div className="curve-card-wrap" aria-label="Grafik Kurva Kepuasan Pengguna per Tahapan Proses">
+            <div className="curve-card-heading">
+              <div>
+                <span className="curve-card-kicker">Peta pengalaman warga</span>
+                <h3 className="curve-card-title">Kurva kepuasan pengguna per tahapan proses</h3>
+              </div>
+              <span className="curve-card-scale">1.0 friksi berat <b>•</b> 5.0 sangat puas</span>
             </div>
 
             <svg
               width="100%"
-              height="75"
-              viewBox="0 0 1000 75"
+              height="190"
+              viewBox="0 0 1000 190"
               preserveAspectRatio="none"
-              style={{ display: 'block', overflow: 'visible' }}
+              className="curve-visual"
+              role="img"
+              aria-label="Kurva kepuasan pengguna dari tahap awal hingga tahap akhir"
             >
               <defs>
                 <linearGradient id="curveGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d9488" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#0d9488" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#267a78" stopOpacity="0.24" />
+                  <stop offset="100%" stopColor="#267a78" stopOpacity="0.02" />
                 </linearGradient>
               </defs>
+
+              {svgCurveData.guides.map((guide, guideIndex) => (
+                <line key={guide} x1="42" y1={guide} x2="958" y2={guide} className={guideIndex === 2 ? 'curve-guide curve-guide-zero' : 'curve-guide'} />
+              ))}
+
+              {[
+                { label: '5', y: 28, tone: 'positive' },
+                { label: '3', y: 79, tone: 'neutral' },
+                { label: '1', y: 130, tone: 'negative' }
+              ].map((guide) => (
+                <text key={guide.label} x="23" y={guide.y + 4} className={`curve-axis-label ${guide.tone}`}>{guide.label}</text>
+              ))}
+
+              {/* Area below the route keeps the chart legible without adding noise. */}
+              {svgCurveData.areaD && <path d={svgCurveData.areaD} fill="url(#curveGradient)" className="curve-area" />}
 
               {/* Curve Stroke */}
               {svgCurveData.pathD && (
                 <path
                   d={svgCurveData.pathD}
                   fill="none"
-                  stroke="#0d9488"
-                  strokeWidth="3"
+                  stroke="#267a78"
+                  strokeWidth="4"
                   strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               )}
 
@@ -689,29 +711,64 @@ export const Step2CJMCanvas: React.FC<Step2CJMCanvasProps> = ({
                 else if (pt.emotion === 0) dotColor = '#d97706';
 
                 return (
-                  <g key={pIdx}>
+                  <g
+                    key={pIdx}
+                    className={`curve-point ${pIdx === safeIdx ? 'is-active' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${pt.code || `Tahap ${pIdx + 1}`}, skor ${pt.score}`}
+                    onClick={() => onSetActiveStageIdx(pIdx)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onSetActiveStageIdx(pIdx);
+                      }
+                    }}
+                  >
+                    <title>{`${pt.code || `Tahap ${pIdx + 1}`}: skor ${pt.score}. Klik untuk melihat detail tahap.`}</title>
+                    {pIdx === safeIdx && <circle cx={pt.x} cy={pt.y} r="16" className="curve-point-ring" />}
                     <circle
                       cx={pt.x}
                       cy={pt.y}
-                      r="6"
+                      r={pIdx === safeIdx ? "8" : "6.5"}
                       fill={dotColor}
                       stroke="#ffffff"
-                      strokeWidth="2.5"
+                      strokeWidth={pIdx === safeIdx ? "3" : "2.5"}
                     />
                     <text
                       x={pt.x}
-                      y={pt.y - 10}
-                      fontSize="11"
+                      y={pt.y - 16}
+                      fontSize="12"
                       fontWeight="800"
                       fill={dotColor}
                       textAnchor="middle"
                     >
                       {pt.score}
                     </text>
+                    <line x1={pt.x} y1="148" x2={pt.x} y2="155" className="curve-stage-tick" />
+                    <text x={pt.x} y="169" className={`curve-stage-code ${pIdx === safeIdx ? 'is-active' : ''}`} textAnchor="middle">{pt.code || `Tahap ${pIdx + 1}`}</text>
                   </g>
                 );
               })}
             </svg>
+
+            {state.stages[safeIdx] && (
+              <div className="curve-detail-panel" aria-live="polite">
+                <div className="curve-detail-marker" aria-hidden="true">
+                  <span>{state.stages[safeIdx].code.replace('Tahap ', 'T')}</span>
+                </div>
+                <div className="curve-detail-copy">
+                  <span className="curve-detail-label">Tahap yang dipilih</span>
+                  <strong>{state.stages[safeIdx].name}</strong>
+                  <span>{state.stages[safeIdx].touchpoint || 'Titik sentuh belum diisi'}</span>
+                </div>
+                <div className="curve-detail-score">
+                  <span>Skor pengalaman</span>
+                  <strong>{(((state.stages[safeIdx].emotion + 2) / 4) * 4 + 1).toFixed(1)}<small>/5</small></strong>
+                  <em>{state.stages[safeIdx].emotion < 0 ? 'Perlu ditinjau' : state.stages[safeIdx].emotion > 0 ? 'Berjalan baik' : 'Netral'}</em>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Connected Action Node Cards Grid */}

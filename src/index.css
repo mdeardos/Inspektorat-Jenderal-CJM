@@ -2,7 +2,7 @@
 
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Segoe UI Variable', 'Segoe UI', 'Helvetica Neue', Arial, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --ink-950: #0b1c3d;
     --ink-900: #14264d;
@@ -20,6 +20,12 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
   }
 
   .font-mono, code, kbd, samp, pre {
@@ -412,10 +418,54 @@
 .curve-card-wrap {
   margin: 1rem 1.25rem 0;
   padding: 0.875rem 1rem 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.875rem;
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #d5e0dc;
+  border-radius: 1rem;
+  box-shadow: 0 10px 26px rgb(19 34 56 / 0.06);
 }
+
+.curve-card-wrap::before { content: ""; display: block; width: 3rem; height: 0.2rem; margin-bottom: 0.75rem; border-radius: 999px; background: var(--kemendag-red); }
+
+.curve-card-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 0.25rem; }
+.curve-card-kicker { display: block; color: var(--kemendag-red); font: 800 0.6rem/1 var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.curve-card-title { margin-top: 0.35rem; color: var(--ink-950); font-size: 0.9rem; font-weight: 850; line-height: 1.2; text-transform: none; }
+.curve-card-scale { color: #64746f; font-size: 0.65rem; font-weight: 700; white-space: nowrap; }
+.curve-card-scale b { padding: 0 0.3rem; color: var(--kemendag-red); }
+.curve-visual { display: block; overflow: visible; margin-top: 0.25rem; }
+.curve-guide { stroke: #dce7e3; stroke-width: 1; stroke-dasharray: 4 7; }
+.curve-guide-zero { stroke: #a7bcb5; stroke-width: 1.5; stroke-dasharray: none; }
+.curve-axis-label { font: 800 0.7rem/1 var(--font-mono); text-anchor: middle; }
+.curve-axis-label.positive { fill: #23776f; }
+.curve-axis-label.neutral { fill: #687872; }
+.curve-axis-label.negative { fill: var(--kemendag-red); }
+.curve-area { pointer-events: none; }
+.curve-point { cursor: pointer; outline: none; }
+.curve-point:focus-visible .curve-point-ring { stroke: #132238; stroke-width: 2.5; stroke-dasharray: 3 3; }
+.curve-point-ring { fill: #ffffff; fill-opacity: 0.82; stroke: #267a78; stroke-width: 2; stroke-dasharray: 2 4; }
+.curve-stage-tick { stroke: #b8c9c3; stroke-width: 1; }
+.curve-stage-code { fill: #64746f; font: 800 0.65rem/1 var(--font-mono); }
+.curve-stage-code.is-active { fill: #132238; }
+.curve-detail-panel { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; margin-top: 0.7rem; padding: 0.75rem; border: 1px solid #d5e0dc; border-radius: 0.875rem; background: #ffffff; }
+.curve-detail-marker { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; background: var(--kemendag-navy); color: #fff; font: 800 0.68rem/1 var(--font-mono); }
+.curve-detail-copy { min-width: 0; }
+.curve-detail-label { display: block; color: var(--kemendag-red); font: 800 0.58rem/1 var(--font-mono); letter-spacing: 0.07em; text-transform: uppercase; }
+.curve-detail-copy strong { display: block; margin-top: 0.22rem; color: var(--ink-950); font-size: 0.82rem; }
+.curve-detail-copy > span:last-child { display: block; overflow: hidden; margin-top: 0.18rem; color: #64746f; font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
+.curve-detail-score { min-width: 6.8rem; padding-left: 0.8rem; border-left: 1px solid #e3ebe7; text-align: right; }
+.curve-detail-score span { display: block; color: #64746f; font-size: 0.58rem; font-weight: 800; text-transform: uppercase; }
+.curve-detail-score strong { display: block; margin-top: 0.15rem; color: var(--kemendag-teal); font: 850 1.2rem/1 var(--font-mono); }
+.curve-detail-score strong small { margin-left: 0.15rem; color: #80908b; font-size: 0.62rem; }
+.curve-detail-score em { display: block; margin-top: 0.18rem; color: #64746f; font-size: 0.62rem; font-style: normal; font-weight: 700; }
+
+.app-shell .canvas-title,
+.portal-shell h1,
+.portal-shell h2,
+.portal-shell h3 { letter-spacing: -0.025em; }
+.app-shell .text-xs,
+.portal-shell .text-xs { font-size: 0.76rem; }
+.app-shell .text-\[11px\],
+.portal-shell .text-\[11px\] { font-size: 0.7rem; }
 
 .journey-canvas-panel > .flex.gap-4,
 .table-card-wrap > div[style*="overflowX"] {
@@ -546,6 +596,11 @@
   .canvas-headline { flex-direction: column; padding: 1rem 1rem 0; }
   .legend-indicators { justify-content: flex-start; }
   .curve-card-wrap { margin: 0.875rem 1rem 0; padding: 0.75rem; }
+  .curve-card-heading { align-items: flex-start; flex-direction: column; gap: 0.4rem; }
+  .curve-card-scale { white-space: normal; }
+  .curve-visual { min-width: 0; }
+  .curve-detail-panel { grid-template-columns: auto minmax(0, 1fr); }
+  .curve-detail-score { grid-column: 1 / -1; padding-top: 0.6rem; padding-left: 0; border-top: 1px solid #e3ebe7; border-left: 0; text-align: left; }
   .journey-canvas-panel > .flex.gap-4,
   .table-card-wrap > div[style*="overflowX"] { padding: 0 1rem 1rem; }
   .modal-veil { padding: 0.5rem; }
